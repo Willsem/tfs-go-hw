@@ -2,54 +2,46 @@ package sandglass
 
 import (
 	"fmt"
-	"strconv"
 )
 
-type configString string
+type configureFunc func()
 
 const (
 	DefaultChar  = 'X'
 	DefaultSize  = 15
 	DefaultColor = 0
-
-	charPrefix  = "char:"
-	sizePrefix  = "size:"
-	colorPrefix = "color"
-	lenOfPrefix = len(charPrefix)
 )
 
-func WithChar(char rune) configString {
-	return configString(charPrefix + string(char))
-}
-
-func WithSize(size int) configString {
-	return configString(sizePrefix + strconv.Itoa(size))
-}
-
-func WithColor(color int) configString {
-	return configString(colorPrefix + strconv.Itoa(color))
-}
-
-func Print(configs ...configString) {
-	char, size, color := getConfig(configs...)
-	printPicture(string(char), size, color)
-}
-
-func getConfig(configs ...configString) (rune, int, int) {
-	char, size, color := DefaultChar, DefaultSize, DefaultColor
-	for _, config := range configs {
-		prefix := config[:lenOfPrefix]
-		switch prefix {
-		case charPrefix:
-			char = rune(config[lenOfPrefix])
-		case sizePrefix:
-			size, _ = strconv.Atoi(string(config[lenOfPrefix:]))
-		case colorPrefix:
-			color, _ = strconv.Atoi(string(config[lenOfPrefix:]))
+var (
+	char rune
+	WithChar = func(c rune) configureFunc {
+		return func() {
+			char = c
 		}
 	}
 
-	return char, size, color
+	size int
+	WithSize = func(s int) configureFunc {
+		return func() {
+			size = s
+		}
+	}
+
+	color int
+	WithColor = func(c int) configureFunc {
+		return func() {
+			color = c
+		}
+	}
+)
+
+func Print(functions ...configureFunc) {
+	char, size, color = DefaultChar, DefaultSize, DefaultColor
+	for _, function := range functions {
+		function()
+	}
+
+	printPicture(string(char), size, color)
 }
 
 func printPicture(char string, size int, color int) {

@@ -14,7 +14,6 @@ func init() {
 	flag.StringVar(&char, "char", string(sandglass.DefaultChar), "symbol for output sandglass")
 	flag.IntVar(&size, "size", sandglass.DefaultSize, "size of sandglass")
 	flag.IntVar(&color, "color", sandglass.DefaultColor, "color of output")
-
 }
 
 func main() {
