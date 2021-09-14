@@ -13,21 +13,21 @@ const (
 )
 
 var (
-	char rune
+	char     rune
 	WithChar = func(c rune) configureFunc {
 		return func() {
 			char = c
 		}
 	}
 
-	size int
+	size     int
 	WithSize = func(s int) configureFunc {
 		return func() {
 			size = s
 		}
 	}
 
-	color int
+	color     int
 	WithColor = func(c int) configureFunc {
 		return func() {
 			color = c
@@ -49,16 +49,16 @@ func printPicture(char string, size int, color int) {
 	printSymbolNTimes(char, size)
 	fmt.Println()
 
-	for i := 1; i < size / 2; i++ {
+	for i := 1; i < size/2; i++ {
 		printLevelOfPyramid(char, size, i)
 	}
 
-	if size % 2 != 0 {
-		printSymbolNTimes(" ", size / 2)
+	if size%2 != 0 {
+		printSymbolNTimes(" ", size/2)
 		fmt.Println(char)
 	}
 
-	for i := size / 2 - 1; i > 0; i-- {
+	for i := size/2 - 1; i > 0; i-- {
 		printLevelOfPyramid(char, size, i)
 	}
 
@@ -69,7 +69,7 @@ func printPicture(char string, size int, color int) {
 func printLevelOfPyramid(symbol string, size int, level int) {
 	printSymbolNTimes(" ", level)
 	fmt.Print(symbol)
-	printSymbolNTimes(" ", size - (level + 1) * 2)
+	printSymbolNTimes(" ", size-(level+1)*2)
 	fmt.Print(symbol)
 	fmt.Println()
 }
