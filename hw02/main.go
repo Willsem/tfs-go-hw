@@ -7,11 +7,14 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/willsem/tfs-go-hw/hw02/company/calculate"
+
 	"github.com/willsem/tfs-go-hw/hw02/company"
 )
 
 const (
 	FILEENV = "FILE"
+	OUTFILE = "out.json"
 )
 
 var filepath string
@@ -37,14 +40,14 @@ func main() {
 
 	file, err := os.Open(filepath)
 	if err != nil {
-		fmt.Printf("Cannot open file: %s\n", filepath)
+		fmt.Printf("Cannot open the file: %s\n", filepath)
 		return
 	}
 	defer file.Close()
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Printf("Cannot read file: %s\n", filepath)
+		fmt.Printf("Cannot read the file: %s\n", filepath)
 		return
 	}
 
@@ -52,5 +55,23 @@ func main() {
 	err = json.Unmarshal(data, &operations)
 	if err != nil {
 		fmt.Println(err)
+	}
+
+	outFile, err := os.Create(OUTFILE)
+	if err != nil {
+		fmt.Printf("Cannot create the file %s\n", OUTFILE)
+		return
+	}
+	defer outFile.Close()
+
+	outData, err := json.Marshal(calculate.CalculateOperations(operations))
+	if err != nil {
+		fmt.Printf("Cannot marshal the result: %s\n", err)
+		return
+	}
+
+	_, err = outFile.Write(outData)
+	if err != nil {
+		fmt.Printf("Cannot write to the file %s\n", OUTFILE)
 	}
 }
