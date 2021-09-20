@@ -6,16 +6,19 @@ import (
 	"strings"
 )
 
-type Value int
+type Value struct {
+	int
+	error
+}
 
-func (v *Value) UnmarshallJSON(b []byte) error {
+func (v *Value) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		return fmt.Errorf("unexpected format of Value: %s", err)
+		v.error = fmt.Errorf("unexpected format of Value: %s", err)
 	}
 
-	*v = Value(i)
+	v.int = i
 	return nil
 }

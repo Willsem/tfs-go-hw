@@ -5,18 +5,21 @@ import (
 	"strings"
 )
 
-type Type string
+type Type struct {
+	string
+	error
+}
 
-func (t *Type) UnmarshallJSON(b []byte) error {
+func (t *Type) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
 
 	switch s {
 	case "income", "+":
-		*t = Type("+")
+		t.string = "+"
 	case "outcome", "-":
-		*t = Type("-")
+		t.string = "-"
 	default:
-		return fmt.Errorf("unexpected format of Type (value: %s)", s)
+		t.error = fmt.Errorf("unexpected format of Type (value: %s)", s)
 	}
 
 	return nil

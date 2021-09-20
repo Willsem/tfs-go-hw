@@ -4,10 +4,13 @@ import (
 	"strings"
 )
 
-type ID string
+type ID struct {
+	string
+	error
+}
 
-func (id *ID) UnmarshallJSON(b []byte) error {
+func (id *ID) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
-	*id = ID(s)
+	id.string = s
 	return nil
 }
