@@ -64,12 +64,6 @@ func main() {
 	}
 	defer outFile.Close()
 
-	/*outData, err := json.Marshal(calculate.Operations(operations))
-	if err != nil {
-		fmt.Printf("Cannot marshal the result: %s\n", err)
-		return
-	}*/
-
 	enc := json.NewEncoder(outFile)
 	enc.SetIndent("", "\t")
 
@@ -78,9 +72,4 @@ func main() {
 		fmt.Printf("Cannot marshal the result: %s\n", err)
 		return
 	}
-	/*
-		_, err = outFile.Write(outData)
-		if err != nil {
-			fmt.Printf("Cannot write to the file %s\n", OUTFILE)
-		}*/
 }
