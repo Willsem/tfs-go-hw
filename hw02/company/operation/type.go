@@ -6,8 +6,8 @@ import (
 )
 
 type Type struct {
-	string
-	error
+	Value string
+	Err   error
 }
 
 func (t *Type) UnmarshalJSON(b []byte) error {
@@ -15,11 +15,11 @@ func (t *Type) UnmarshalJSON(b []byte) error {
 
 	switch s {
 	case "income", "+":
-		t.string = "+"
+		t.Value = "+"
 	case "outcome", "-":
-		t.string = "-"
+		t.Value = "-"
 	default:
-		t.error = fmt.Errorf("unexpected format of Type (value: %s)", s)
+		t.Err = fmt.Errorf("unexpected format of Type (value: %s)", s)
 	}
 
 	return nil

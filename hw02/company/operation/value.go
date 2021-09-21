@@ -7,8 +7,8 @@ import (
 )
 
 type Value struct {
-	int
-	error
+	Value int
+	Err   error
 }
 
 func (v *Value) UnmarshalJSON(b []byte) error {
@@ -16,9 +16,9 @@ func (v *Value) UnmarshalJSON(b []byte) error {
 
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		v.error = fmt.Errorf("unexpected format of Value: %s", err)
+		v.Err = fmt.Errorf("unexpected format of Value: %s", err)
 	}
 
-	v.int = i
+	v.Value = i
 	return nil
 }

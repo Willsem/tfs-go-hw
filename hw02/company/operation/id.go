@@ -5,12 +5,12 @@ import (
 )
 
 type ID struct {
-	string
-	error
+	Value string
+	Err   error
 }
 
 func (id *ID) UnmarshalJSON(b []byte) error {
 	s := strings.Trim(string(b), "\"")
-	id.string = s
+	id.Value = s
 	return nil
 }

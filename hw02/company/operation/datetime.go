@@ -7,8 +7,8 @@ import (
 )
 
 type Datetime struct {
-	time.Time
-	error
+	Value time.Time
+	Err   error
 }
 
 func (date *Datetime) UnmarshalJSON(b []byte) error {
@@ -16,10 +16,10 @@ func (date *Datetime) UnmarshalJSON(b []byte) error {
 
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		date.error = fmt.Errorf("%s", err)
+		date.Err = fmt.Errorf("%s", err)
 	}
 
-	date.Time = t
+	date.Value = t
 	return nil
 }
 
