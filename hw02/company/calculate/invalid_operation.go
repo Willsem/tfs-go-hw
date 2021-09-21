@@ -15,11 +15,11 @@ func NewInvalidOperationID(id string) InvalidOperationID {
 
 	val, err := strconv.Atoi(id)
 	if err != nil {
-		opID.int = &val
-		opID.string = nil
-	} else {
 		opID.int = nil
 		opID.string = &id
+	} else {
+		opID.int = &val
+		opID.string = nil
 	}
 
 	return opID
@@ -28,7 +28,7 @@ func NewInvalidOperationID(id string) InvalidOperationID {
 func (id InvalidOperationID) MarshalJSON() ([]byte, error) {
 	switch {
 	case id.string != nil:
-		return []byte(*id.string), nil
+		return []byte(`"` + *id.string + `"`), nil
 	case id.int != nil:
 		return []byte(strconv.Itoa(*id.int)), nil
 	default:
