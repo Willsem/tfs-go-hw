@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"hw-async/generator"
 	"time"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/willsem/tfs-go-hw/hw03/generator"
 )
 
 var tickers = []string{"AAPL", "SBER", "NVDA", "TSLA"}

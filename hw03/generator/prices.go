@@ -2,9 +2,10 @@ package generator
 
 import (
 	"context"
-	"hw-async/domain"
 	"math/rand"
 	"time"
+
+	"github.com/willsem/tfs-go-hw/hw03/domain"
 )
 
 type Config struct {
