@@ -2,16 +2,36 @@ package main
 
 import (
 	"context"
+	"flag"
+	"os"
+	"os/signal"
+	"sync"
 	"time"
+
+	"github.com/willsem/tfs-go-hw/hw03/domain"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/willsem/tfs-go-hw/hw03/generator"
 )
 
-var tickers = []string{"AAPL", "SBER", "NVDA", "TSLA"}
+var (
+	// tickers = []string{"AAPL", "SBER", "NVDA", "TSLA"}
+	tickers = []string{"AAPL"}
+	debug   bool
+)
+
+func init() {
+	flag.BoolVar(&debug, "debug", false, "logging level")
+}
 
 func main() {
+	flag.Parse()
+
 	logger := log.New()
+	if debug {
+		logger.Level = log.DebugLevel
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	pg := generator.NewPricesGenerator(generator.Config{
@@ -23,9 +43,23 @@ func main() {
 	logger.Info("start prices generator...")
 	prices := pg.Prices(ctx)
 
-	for i := 0; i <= 10; i++ {
-		logger.Infof("prices %d: %+v", i, <-prices)
-	}
+	pipeline := domain.NewPipeline(logger, ctx)
+	wg := &sync.WaitGroup{}
 
-	cancel()
+	wg.Add(1)
+	go pipeline.Start(prices, wg)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	wg.Add(1)
+	go func(wg *sync.WaitGroup) {
+		for _ = range c {
+			logger.Info("Programm is closing")
+			cancel()
+			wg.Done()
+		}
+	}(wg)
+
+	wg.Wait()
 }
