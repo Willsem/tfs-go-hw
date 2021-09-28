@@ -25,10 +25,9 @@ type Pipeline struct {
 	ctx    context.Context
 }
 
-func NewPipeline(logger *log.Logger, ctx context.Context) Pipeline {
+func NewPipeline(logger *log.Logger) Pipeline {
 	return Pipeline{
 		logger: logger,
-		ctx:    ctx,
 	}
 }
 
@@ -133,26 +132,7 @@ func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {
 					current = append(current, price)
 					companies[price.Ticker] = current
 				} else {
-					candle := Candle{
-						Ticker: price.Ticker,
-						Period: CandlePeriod1m,
-						TS:     prevTS,
-						Open:   current[0].Value,
-						Close:  current[len(current)-1].Value,
-						High:   current[0].Value,
-						Low:    current[0].Value,
-					}
-
-					for _, p := range current {
-						if p.Value > candle.High {
-							candle.High = p.Value
-						}
-						if p.Value < candle.Low {
-							candle.Low = p.Value
-						}
-					}
-
-					out <- candle
+					out <- makeCandleFromPrices(current, prevTS)
 
 					current = make([]Price, 0, 1)
 					current = append(current, price)
@@ -162,10 +142,40 @@ func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {
 		}
 
 		p.logger.Info("end reading prices")
+
+		for _, prices := range companies {
+			ts, _ := PeriodTS(CandlePeriod1m, prices[0].TS)
+			out <- makeCandleFromPrices(prices, ts)
+		}
+
+		p.logger.Infof("end sending from 1m")
 		close(out)
 	}()
 
 	return out
+}
+
+func makeCandleFromPrices(prices []Price, ts time.Time) Candle {
+	candle := Candle{
+		Ticker: prices[0].Ticker,
+		Period: CandlePeriod1m,
+		TS:     ts,
+		Open:   prices[0].Value,
+		Close:  prices[len(prices)-1].Value,
+		High:   prices[0].Value,
+		Low:    prices[0].Value,
+	}
+
+	for _, p := range prices {
+		if p.Value > candle.High {
+			candle.High = p.Value
+		}
+		if p.Value < candle.Low {
+			candle.Low = p.Value
+		}
+	}
+
+	return candle
 }
 
 func (p Pipeline) calculateFewMCandles(in <-chan Candle, period CandlePeriod) <-chan Candle {
@@ -189,26 +199,7 @@ func (p Pipeline) calculateFewMCandles(in <-chan Candle, period CandlePeriod) <-
 					current = append(current, candle)
 					companies[candle.Ticker] = current
 				} else {
-					candleToOut := Candle{
-						Ticker: candle.Ticker,
-						Period: period,
-						TS:     prevTS,
-						Open:   current[0].Open,
-						Close:  current[len(current)-1].Close,
-						High:   current[0].High,
-						Low:    current[0].Low,
-					}
-
-					for _, c := range current {
-						if c.High > candleToOut.High {
-							candleToOut.High = c.High
-						}
-						if c.Low < candleToOut.Low {
-							candleToOut.Low = c.Low
-						}
-					}
-
-					out <- candleToOut
+					out <- makeCandleFromCandles(current, period, prevTS)
 
 					current = make([]Candle, 0, 1)
 					current = append(current, candle)
@@ -218,8 +209,38 @@ func (p Pipeline) calculateFewMCandles(in <-chan Candle, period CandlePeriod) <-
 		}
 
 		p.logger.Infof("end reading candles for: %s", period)
+
+		for _, candles := range companies {
+			ts, _ := PeriodTS(period, candles[0].TS)
+			out <- makeCandleFromCandles(candles, period, ts)
+		}
+
+		p.logger.Infof("end sending from %s", period)
 		close(out)
 	}()
 
 	return out
+}
+
+func makeCandleFromCandles(candles []Candle, period CandlePeriod, ts time.Time) Candle {
+	candleToOut := Candle{
+		Ticker: candles[0].Ticker,
+		Period: period,
+		TS:     ts,
+		Open:   candles[0].Open,
+		Close:  candles[len(candles)-1].Close,
+		High:   candles[0].High,
+		Low:    candles[0].Low,
+	}
+
+	for _, c := range candles {
+		if c.High > candleToOut.High {
+			candleToOut.High = c.High
+		}
+		if c.Low < candleToOut.Low {
+			candleToOut.Low = c.Low
+		}
+	}
+
+	return candleToOut
 }

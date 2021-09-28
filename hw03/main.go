@@ -42,7 +42,7 @@ func main() {
 	logger.Info("start prices generator...")
 	prices := pg.Prices(ctx)
 
-	pipeline := domain.NewPipeline(logger, ctx)
+	pipeline := domain.NewPipeline(logger)
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
