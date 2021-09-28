@@ -55,7 +55,7 @@ func (p Pipeline) Start(in <-chan Price, wg *sync.WaitGroup) {
 	wgFiles.Add(1)
 	go p.writeCandlesToFile(file1mChan, CandleFile1m, wgFiles)
 
-	twoMinuteOut := p.calcuate2mCandles(in2mChan)
+	twoMinuteOut := p.calculateFewMCandles(in2mChan, CandlePeriod2m)
 
 	file2mChan := make(chan Candle, LenOfBuffer)
 	in10mChan := make(chan Candle, LenOfBuffer)
@@ -72,20 +72,10 @@ func (p Pipeline) Start(in <-chan Price, wg *sync.WaitGroup) {
 
 	wgFiles.Add(1)
 	go p.writeCandlesToFile(file2mChan, CandleFile2m, wgFiles)
-	tenMinuteOut := p.calculate10mCandles(in10mChan)
-
-	file10mChan := make(chan Candle, LenOfBuffer)
-
-	go func() {
-		for candle := range tenMinuteOut {
-			file10mChan <- candle
-		}
-
-		close(file10mChan)
-	}()
+	tenMinuteOut := p.calculateFewMCandles(in10mChan, CandlePeriod10m)
 
 	wgFiles.Add(1)
-	go p.writeCandlesToFile(file10mChan, CandleFile10m, wgFiles)
+	go p.writeCandlesToFile(tenMinuteOut, CandleFile10m, wgFiles)
 
 	wgFiles.Wait()
 	p.logger.Info("End writing to files")
@@ -145,6 +135,7 @@ func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {
 				} else {
 					candle := Candle{
 						Ticker: price.Ticker,
+						Period: CandlePeriod1m,
 						TS:     prevTS,
 						Open:   current[0].Value,
 						Close:  current[len(current)-1].Value,
@@ -177,20 +168,56 @@ func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {
 	return out
 }
 
-func (p Pipeline) calcuate2mCandles(in <-chan Candle) <-chan Candle {
+func (p Pipeline) calculateFewMCandles(in <-chan Candle, period CandlePeriod) <-chan Candle {
 	out := make(chan Candle)
 
 	go func() {
-		close(out)
-	}()
+		companies := make(map[string][]Candle)
+		for candle := range in {
+			p.logger.Debugf("was read candle for %s: %+v", period, candle)
 
-	return out
-}
+			current, ok := companies[candle.Ticker]
+			if !ok {
+				current = make([]Candle, 0, 1)
+				current = append(current, candle)
+				companies[candle.Ticker] = current
+			} else {
+				prevTS, _ := PeriodTS(period, current[len(current)-1].TS)
+				newTS, _ := PeriodTS(period, candle.TS)
 
-func (p Pipeline) calculate10mCandles(in <-chan Candle) <-chan Candle {
-	out := make(chan Candle)
+				if prevTS == newTS {
+					current = append(current, candle)
+					companies[candle.Ticker] = current
+				} else {
+					candleToOut := Candle{
+						Ticker: candle.Ticker,
+						Period: period,
+						TS:     prevTS,
+						Open:   current[0].Open,
+						Close:  current[len(current)-1].Close,
+						High:   current[0].High,
+						Low:    current[0].Low,
+					}
 
-	go func() {
+					for _, c := range current {
+						if c.High > candleToOut.High {
+							candleToOut.High = c.High
+						}
+						if c.Low < candleToOut.Low {
+							candleToOut.Low = c.Low
+						}
+					}
+
+					out <- candleToOut
+
+					current = make([]Candle, 0, 1)
+					current = append(current, candle)
+					companies[candle.Ticker] = current
+				}
+			}
+		}
+
+		p.logger.Infof("end reading candles for: %s", period)
 		close(out)
 	}()
 

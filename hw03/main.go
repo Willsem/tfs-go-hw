@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	// tickers = []string{"AAPL", "SBER", "NVDA", "TSLA"}
-	tickers = []string{"AAPL"}
+	tickers = []string{"AAPL", "SBER", "NVDA", "TSLA"}
 	debug   bool
 )
 
