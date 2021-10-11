@@ -34,87 +34,60 @@ func NewPipeline(logger *log.Logger) Pipeline {
 func (p Pipeline) Start(in <-chan Price, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	wgFiles := &sync.WaitGroup{}
+	ch := p.calculate1mCandles(in)
+	ch = p.writeCandlesToFile(ch, CandleFile1m)
+	ch = p.calculateFewMCandles(ch, CandlePeriod2m)
+	ch = p.writeCandlesToFile(ch, CandleFile2m)
+	ch = p.calculateFewMCandles(ch, CandlePeriod10m)
+	ch = p.writeCandlesToFile(ch, CandleFile10m)
 
-	minuteOut := p.calculate1mCandles(in)
-
-	file1mChan := make(chan Candle, LenOfBuffer)
-	in2mChan := make(chan Candle, LenOfBuffer)
-
-	go func() {
-		for candle := range minuteOut {
-			file1mChan <- candle
-			in2mChan <- candle
-		}
-
-		close(file1mChan)
-		close(in2mChan)
-	}()
-
-	wgFiles.Add(1)
-	go p.writeCandlesToFile(file1mChan, CandleFile1m, wgFiles)
-
-	twoMinuteOut := p.calculateFewMCandles(in2mChan, CandlePeriod2m)
-
-	file2mChan := make(chan Candle, LenOfBuffer)
-	in10mChan := make(chan Candle, LenOfBuffer)
-
-	go func() {
-		for candle := range twoMinuteOut {
-			file2mChan <- candle
-			in10mChan <- candle
-		}
-
-		close(file2mChan)
-		close(in10mChan)
-	}()
-
-	wgFiles.Add(1)
-	go p.writeCandlesToFile(file2mChan, CandleFile2m, wgFiles)
-	tenMinuteOut := p.calculateFewMCandles(in10mChan, CandlePeriod10m)
-
-	wgFiles.Add(1)
-	go p.writeCandlesToFile(tenMinuteOut, CandleFile10m, wgFiles)
-
-	wgFiles.Wait()
 	p.logger.Info("End writing to files")
 }
 
-func (p Pipeline) writeCandlesToFile(in <-chan Candle, filename CandleFilename, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (p Pipeline) writeCandlesToFile(in <-chan Candle, filename CandleFilename) <-chan Candle {
+	out := make(chan Candle, LenOfBuffer)
 
-	file, err := os.Create(string(filename))
-	if err != nil {
-		p.logger.Error(err)
-		return
-	}
-	defer file.Close()
+	go func() {
+		defer close(out)
 
-	for candle := range in {
-		p.logger.Debugf("write to file %s: %+v", filename, candle)
-
-		_, err := fmt.Fprintf(
-			file,
-			"%s,%s,%.6f,%.6f,%.6f,%.6f\n",
-			candle.Ticker,
-			candle.TS.Format(time.RFC3339),
-			candle.Open,
-			candle.Close,
-			candle.High,
-			candle.Low,
-		)
-
+		file, err := os.Create(string(filename))
 		if err != nil {
 			p.logger.Error(err)
 			return
 		}
-	}
+		defer file.Close()
+
+		for candle := range in {
+			out <- candle
+			p.logger.Infof("write to file %s: %+v", filename, candle)
+
+			_, err := fmt.Fprintf(
+				file,
+				"%s,%s,%.6f,%.6f,%.6f,%.6f\n",
+				candle.Ticker,
+				candle.TS.Format(time.RFC3339),
+				candle.Open,
+				candle.Close,
+				candle.High,
+				candle.Low,
+			)
+
+			if err != nil {
+				p.logger.Error(err)
+				return
+			}
+		}
+	}()
+
+	return out
 }
 
 func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {
-	out := make(chan Candle)
+	out := make(chan Candle, LenOfBuffer)
 
 	go func() {
+		defer close(out)
+
 		companies := make(map[string][]Price)
 		for price := range in {
 			p.logger.Debugf("was read price: %+v", price)
@@ -149,7 +122,6 @@ func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {
 		}
 
 		p.logger.Infof("end sending from 1m")
-		close(out)
 	}()
 
 	return out
@@ -179,9 +151,11 @@ func makeCandleFromPrices(prices []Price, ts time.Time) Candle {
 }
 
 func (p Pipeline) calculateFewMCandles(in <-chan Candle, period CandlePeriod) <-chan Candle {
-	out := make(chan Candle)
+	out := make(chan Candle, LenOfBuffer)
 
 	go func() {
+		defer close(out)
+
 		companies := make(map[string][]Candle)
 		for candle := range in {
 			p.logger.Debugf("was read candle for %s: %+v", period, candle)
@@ -216,7 +190,6 @@ func (p Pipeline) calculateFewMCandles(in <-chan Candle, period CandlePeriod) <-
 		}
 
 		p.logger.Infof("end sending from %s", period)
-		close(out)
 	}()
 
 	return out

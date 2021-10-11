@@ -53,7 +53,7 @@ func main() {
 
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
-		for _ = range c {
+		for range c {
 			logger.Info("Programm is closing")
 			cancel()
 			wg.Done()
