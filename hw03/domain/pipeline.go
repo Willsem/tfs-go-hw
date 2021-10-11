@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -31,30 +30,45 @@ func NewPipeline(logger *log.Logger) Pipeline {
 	}
 }
 
-func (p Pipeline) Start(in <-chan Price, wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (p Pipeline) Start(in <-chan Price, ctx context.Context) error {
 	ch := p.calculate1mCandles(in)
-	ch = p.writeCandlesToFile(ch, CandleFile1m)
+	ch, err := p.writeCandlesToFile(ch, CandleFile1m)
+	if err != nil {
+		p.logger.Error(err)
+		return err
+	}
+
 	ch = p.calculateFewMCandles(ch, CandlePeriod2m)
-	ch = p.writeCandlesToFile(ch, CandleFile2m)
+	ch, err = p.writeCandlesToFile(ch, CandleFile2m)
+	if err != nil {
+		p.logger.Error(err)
+		return err
+	}
+
 	ch = p.calculateFewMCandles(ch, CandlePeriod10m)
-	ch = p.writeCandlesToFile(ch, CandleFile10m)
+	ch, err = p.writeCandlesToFile(ch, CandleFile10m)
+	if err != nil {
+		p.logger.Error(err)
+		return err
+	}
+
+	for range ctx.Done() {
+		break
+	}
 
 	p.logger.Info("End writing to files")
+	return nil
 }
 
-func (p Pipeline) writeCandlesToFile(in <-chan Candle, filename CandleFilename) <-chan Candle {
+func (p Pipeline) writeCandlesToFile(in <-chan Candle, filename CandleFilename) (<-chan Candle, error) {
 	out := make(chan Candle, LenOfBuffer)
+	file, err := os.Create(string(filename))
+	if err != nil {
+		return nil, err
+	}
 
 	go func() {
 		defer close(out)
-
-		file, err := os.Create(string(filename))
-		if err != nil {
-			p.logger.Error(err)
-			return
-		}
 		defer file.Close()
 
 		for candle := range in {
@@ -79,7 +93,7 @@ func (p Pipeline) writeCandlesToFile(in <-chan Candle, filename CandleFilename) 
 		}
 	}()
 
-	return out
+	return out, nil
 }
 
 func (p Pipeline) calculate1mCandles(in <-chan Price) <-chan Candle {

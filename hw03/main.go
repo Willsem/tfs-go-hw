@@ -5,10 +5,10 @@ import (
 	"flag"
 	"os"
 	"os/signal"
-	"sync"
 	"time"
 
 	"github.com/willsem/tfs-go-hw/hw03/domain"
+	"golang.org/x/sync/errgroup"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/willsem/tfs-go-hw/hw03/generator"
@@ -43,22 +43,26 @@ func main() {
 	prices := pg.Prices(ctx)
 
 	pipeline := domain.NewPipeline(logger)
-	wg := &sync.WaitGroup{}
+	group, groupCtx := errgroup.WithContext(ctx)
 
-	wg.Add(1)
-	go pipeline.Start(prices, wg)
+	group.Go(func() error {
+		return pipeline.Start(prices, groupCtx)
+	})
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 
-	wg.Add(1)
-	go func(wg *sync.WaitGroup) {
+	group.Go(func() error {
 		for range c {
 			logger.Info("Programm is closing")
 			cancel()
-			wg.Done()
+			break
 		}
-	}(wg)
+		return nil
+	})
 
-	wg.Wait()
+	err := group.Wait()
+	if err != nil {
+		logger.Error(err)
+	}
 }
