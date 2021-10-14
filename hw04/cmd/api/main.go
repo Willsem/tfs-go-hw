@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/sirupsen/logrus"
 	"github.com/willsem/tfs-go-hw/hw04/internal/handlers"
 	"github.com/willsem/tfs-go-hw/hw04/internal/repositories"
@@ -20,12 +21,13 @@ func main() {
 	messagesService := services.NewMessagesService(messagesRepository, logger)
 
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
 
 	usersHandler := handlers.NewUsersHandler(usersService, logger)
 	r.Mount("/users", usersHandler.Routes())
 
-	messagesHandler := handlers.NewMessagesHandler(messagesService, logger)
-	r.Mount("/messaages", messagesHandler.Routes())
+	messagesHandler := handlers.NewMessagesHandler(messagesService, usersService, logger)
+	r.Mount("/messages", messagesHandler.Routes())
 
 	http.ListenAndServe(":5000", r)
 }
