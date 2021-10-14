@@ -21,7 +21,11 @@ type MessagesHandler struct {
 	logger          *logrus.Logger
 }
 
-func NewMessagesHandler(messagesService MessagesService, usersService UsersService, logger *logrus.Logger) *MessagesHandler {
+func NewMessagesHandler(
+	messagesService MessagesService,
+	usersService UsersService,
+	logger *logrus.Logger,
+) *MessagesHandler {
 	return &MessagesHandler{
 		messagesService: messagesService,
 		usersService:    usersService,

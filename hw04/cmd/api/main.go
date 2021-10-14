@@ -18,7 +18,7 @@ func main() {
 	messagesRepository := repositories.NewMessagesRepository(logger)
 
 	usersService := services.NewUsersService(usersRepository, logger)
-	messagesService := services.NewMessagesService(messagesRepository, logger)
+	messagesService := services.NewMessagesService(messagesRepository, usersRepository, logger)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
