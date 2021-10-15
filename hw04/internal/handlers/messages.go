@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/sirupsen/logrus"
@@ -61,7 +62,29 @@ func (handler *MessagesHandler) authMiddleware(next http.Handler) http.Handler {
 }
 
 func (handler *MessagesHandler) sharedChatGet(w http.ResponseWriter, r *http.Request) {
-	messages, err := handler.messagesService.GetSharedMessages()
+	offset := r.URL.Query().Get("offset")
+	if offset == "" {
+		offset = "0"
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
+		return
+	}
+
+	count := r.URL.Query().Get("count")
+	if count == "" {
+		count = "50"
+	}
+
+	countInt, err := strconv.Atoi(count)
+	if err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
+		return
+	}
+
+	messages, err := handler.messagesService.GetSharedMessages(offsetInt, countInt)
 	if err != nil {
 		response.Respond(w, http.StatusInternalServerError, dto.Error{Message: err.Error()})
 		return
@@ -100,8 +123,30 @@ func (handler *MessagesHandler) privateChatGet(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	offset := r.URL.Query().Get("offset")
+	if offset == "" {
+		offset = "0"
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
+		return
+	}
+
+	count := r.URL.Query().Get("count")
+	if count == "" {
+		count = "50"
+	}
+
+	countInt, err := strconv.Atoi(count)
+	if err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Error{Message: err.Error()})
+		return
+	}
+
 	user2 := chi.URLParam(r, "userId")
-	messages, err := handler.messagesService.GetPrivateMessages(user1, user2)
+	messages, err := handler.messagesService.GetPrivateMessages(offsetInt, countInt, user1, user2)
 	if err != nil {
 		response.Respond(w, http.StatusInternalServerError, dto.Error{Message: err.Error()})
 		return

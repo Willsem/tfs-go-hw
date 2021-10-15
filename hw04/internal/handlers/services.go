@@ -10,9 +10,9 @@ type UsersService interface {
 }
 
 type MessagesService interface {
-	GetSharedMessages() ([]dto.Message, error)
+	GetSharedMessages(offset, count int) ([]dto.Message, error)
 	SendSharedMessage(sender string, message dto.MessageContent) error
 
-	GetPrivateMessages(user1 string, user2 string) ([]dto.Message, error)
+	GetPrivateMessages(offset, count int, user1, user2 string) ([]dto.Message, error)
 	SendPrivateMessage(sender string, recipent string, message dto.MessageContent) error
 }

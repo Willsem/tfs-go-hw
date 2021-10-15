@@ -26,23 +26,23 @@ func NewMessagesService(
 	}
 }
 
-func (service *MessagesService) GetSharedMessages() ([]dto.Message, error) {
-	return service.GetPrivateMessages("shared", "shared")
+func (service *MessagesService) GetSharedMessages(offset, count int) ([]dto.Message, error) {
+	return service.GetPrivateMessages(offset, count, "shared", "shared")
 }
 
 func (service *MessagesService) SendSharedMessage(sender string, message dto.MessageContent) error {
 	return service.SendPrivateMessage(sender, service.messagesRepository.GetSharedChatId(), message)
 }
 
-func (service *MessagesService) GetPrivateMessages(user1 string, user2 string) ([]dto.Message, error) {
+func (service *MessagesService) GetPrivateMessages(offset, count int, user1, user2 string) ([]dto.Message, error) {
 	messages := make([]dto.Message, 0)
 
 	var domain []domain.Message
 	var err error
 	if user1 == "shared" && user2 == "shared" {
-		domain, err = service.messagesRepository.GetSharedMessages()
+		domain, err = service.messagesRepository.GetSharedMessages(offset, count)
 	} else {
-		domain, err = service.messagesRepository.GetMessages(user1, user2)
+		domain, err = service.messagesRepository.GetMessages(offset, count, user1, user2)
 	}
 
 	if err != nil {

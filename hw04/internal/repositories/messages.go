@@ -21,22 +21,22 @@ func NewMessagesRepository(logger *logrus.Logger) *MessagesRepository {
 	}
 }
 
-func (repository *MessagesRepository) GetSharedMessages() ([]domain.Message, error) {
+func (repository *MessagesRepository) GetSharedMessages(offset, count int) ([]domain.Message, error) {
 	result := make([]domain.Message, 0)
-	for _, message := range repository.messages {
-		if message.RecipentID == sharedChatId {
-			result = append(result, message)
+	for i := offset; i < offset+count && i < len(repository.messages); i++ {
+		if repository.messages[i].RecipentID == sharedChatId {
+			result = append(result, repository.messages[i])
 		}
 	}
 	return result, nil
 }
 
-func (repository *MessagesRepository) GetMessages(user1, user2 string) ([]domain.Message, error) {
+func (repository *MessagesRepository) GetMessages(offset, count int, user1, user2 string) ([]domain.Message, error) {
 	result := make([]domain.Message, 0)
-	for _, message := range repository.messages {
-		if message.SenderID == user1 && message.RecipentID == user2 ||
-			message.SenderID == user2 && message.RecipentID == user1 {
-			result = append(result, message)
+	for i := offset; i < offset+count && i < len(repository.messages); i++ {
+		if repository.messages[i].SenderID == user1 && repository.messages[i].RecipentID == user2 ||
+			repository.messages[i].SenderID == user2 && repository.messages[i].RecipentID == user1 {
+			result = append(result, repository.messages[i])
 		}
 	}
 	return result, nil

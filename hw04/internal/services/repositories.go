@@ -13,8 +13,8 @@ type UsersRepository interface {
 }
 
 type MessagesRepository interface {
-	GetSharedMessages() ([]domain.Message, error)
-	GetMessages(user1, user2 string) ([]domain.Message, error)
+	GetSharedMessages(offset, count int) ([]domain.Message, error)
+	GetMessages(offset, count int, user1, user2 string) ([]domain.Message, error)
 	AddMessage(message domain.Message) error
 
 	GetSharedChatId() string
