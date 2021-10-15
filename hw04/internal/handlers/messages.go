@@ -38,7 +38,7 @@ func (handler *MessagesHandler) Routes() chi.Router {
 
 	r.Use(handler.authMiddleware)
 	r.Get("/", handler.sharedChatGet)
-	r.Post("/", handler.sharedChatGet)
+	r.Post("/", handler.sharedChatSendMessage)
 	r.Get("/{userId}", handler.privateChatGet)
 	r.Post("/{userId}", handler.privateChatSendMessage)
 

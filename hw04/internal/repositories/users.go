@@ -23,6 +23,12 @@ func NewUsersRepository(logger *logrus.Logger) *UsersRepository {
 }
 
 func (repository *UsersRepository) AddUser(login string, passcode string) (domain.User, error) {
+	for _, user := range repository.users {
+		if user.Login == login {
+			return domain.User{}, fmt.Errorf("User with this login is already exist")
+		}
+	}
+
 	user := domain.User{
 		ID:       uuid.New().String(),
 		Login:    login,
