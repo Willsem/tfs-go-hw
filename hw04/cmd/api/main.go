@@ -29,5 +29,6 @@ func main() {
 	messagesHandler := handlers.NewMessagesHandler(messagesService, usersService, logger)
 	r.Mount("/messages", messagesHandler.Routes())
 
+	logger.Info("Listen :5000")
 	http.ListenAndServe(":5000", r)
 }
