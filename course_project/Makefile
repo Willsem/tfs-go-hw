@@ -4,4 +4,7 @@ build:
 run:
 	go run -v ./cmd/api
 
+debug:
+	go run -v ./cmd/api -debug
+
 .DEFAULT_GOAL := build
