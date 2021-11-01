@@ -1,0 +1,8 @@
+[telegram]
+api_key = "telegram_api_key_value"
+
+[kraken]
+api_key = "kraken_api_key_value"
+
+[database]
+connection_string = "postgresql_conection_string_value"
