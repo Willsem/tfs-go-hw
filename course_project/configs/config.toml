@@ -1,8 +1,10 @@
 [telegram]
-api_key = "telegram_api_key_value"
+bot_key = "bot_key_value"
 
 [kraken]
 api_key = "kraken_api_key_value"
+rest_url = "https://demo-futures.kraken.com/derivatives/api/v3"
+socket_url = "wss://demo-futures.kraken.com/ws/v1"
 
 [database]
 connection_string = "postgresql_conection_string_value"

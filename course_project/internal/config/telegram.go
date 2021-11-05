@@ -1,5 +1,5 @@
 package config
 
 type Telegram struct {
-	ApiKey string `toml:"api_key"`
+	BotKey string `toml:"bot_key"`
 }
