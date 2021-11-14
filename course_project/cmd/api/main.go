@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
 	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
 	postgres "github.com/willsem/tfs-go-hw/course_project/pkg/postres"
 )
 
@@ -80,4 +82,13 @@ func main() {
 	fmt.Println(repository.GetAll())
 	fmt.Println(repository.GetByTicker("APPL"))
 	fmt.Println(repository.GetByTicker("AMD"))
+
+	bot, err := telegram.NewBot(repository, logger, config.Telegram)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	bot.Start()
+
+	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }
