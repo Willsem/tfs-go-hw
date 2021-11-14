@@ -18,12 +18,12 @@ func New(pool *pgxpool.Pool) *PostgresqlApplicationsReposity {
 	}
 }
 
-const addApplicationQuery = `insert into applications (ticker, cost) values ($1, $2) returning (ticker)`
+const addApplicationQuery = `insert into applications (ticker, cost, type) values ($1, $2, $3) returning (ticker)`
 
 func (repository *PostgresqlApplicationsReposity) Add(application domain.Application) error {
 	var row string
 	err := repository.pool.QueryRow(context.Background(), addApplicationQuery,
-		application.Ticker, application.Cost).Scan(&row)
+		application.Ticker, application.Cost, application.Type).Scan(&row)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (repository *PostgresqlApplicationsReposity) Add(application domain.Applica
 	return nil
 }
 
-const selectApplicationsQuery = `select id, ticker, cost, created_at from applications`
+const selectApplicationsQuery = `select id, ticker, cost, created_at, type from applications`
 
 func (repository *PostgresqlApplicationsReposity) GetAll() ([]domain.Application, error) {
 	rows, err := repository.pool.Query(context.Background(), selectApplicationsQuery)
@@ -43,7 +43,7 @@ func (repository *PostgresqlApplicationsReposity) GetAll() ([]domain.Application
 	return repository.scanApplications(rows)
 }
 
-const selectApplicationsByTicketQuery = `select id, ticker, cost, created_at from applications where ticker=$1`
+const selectApplicationsByTicketQuery = `select id, ticker, cost, created_at, type from applications where ticker=$1`
 
 func (repository *PostgresqlApplicationsReposity) GetByTicker(ticker string) ([]domain.Application, error) {
 	rows, err := repository.pool.Query(context.Background(), selectApplicationsByTicketQuery, ticker)
@@ -60,7 +60,7 @@ func (repository *PostgresqlApplicationsReposity) scanApplications(rows pgx.Rows
 
 	for rows.Next() {
 		var app domain.Application
-		err := rows.Scan(&app.Id, &app.Ticker, &app.Cost, &app.CreatedAt)
+		err := rows.Scan(&app.Id, &app.Ticker, &app.Cost, &app.CreatedAt, &app.Type)
 		if err != nil {
 			return nil, err
 		}

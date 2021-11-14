@@ -61,6 +61,7 @@ func main() {
 	app := domain.Application{
 		Ticker: "APPL",
 		Cost:   150,
+		Type:   domain.Buy,
 	}
 	err = repository.Add(app)
 	if err != nil {
@@ -74,6 +75,7 @@ func main() {
 	}
 
 	app.Ticker = "AMD"
+	app.Type = domain.Sell
 	err = repository.Add(app)
 	if err != nil {
 		logger.Fatal(err)
