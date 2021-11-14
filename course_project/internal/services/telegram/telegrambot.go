@@ -76,8 +76,16 @@ func (bot *Bot) listen() {
 				}
 			}
 
+		case parsed[0] == "/help":
+			reply = "/all - Получить список всех заявок\n"
+			reply += "/ticker <ticker> - Получить список заявок по тикеру"
+
 		default:
 			reply = "Неизвестная команда, используйте /help"
+		}
+
+		if reply == "" {
+			reply = "По данному запросу заявки не найдены"
 		}
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply)
