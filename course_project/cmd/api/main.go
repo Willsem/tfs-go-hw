@@ -12,7 +12,7 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
 	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
-	postgres "github.com/willsem/tfs-go-hw/course_project/pkg/postres"
+	"github.com/willsem/tfs-go-hw/course_project/pkg/postgres"
 )
 
 var (
