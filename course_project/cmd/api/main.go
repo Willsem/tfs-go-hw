@@ -2,11 +2,15 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
+	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
+	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
+	postgres "github.com/willsem/tfs-go-hw/course_project/pkg/postres"
 )
 
 var (
@@ -43,4 +47,37 @@ func main() {
 	if _, err := toml.DecodeFile(configPath, &config); err != nil {
 		logger.Fatal(err)
 	}
+
+	pool, err := postgres.NewPool(config.Database.ConnectionString)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	defer pool.Close()
+
+	repository := applications.New(pool)
+
+	app := domain.Application{
+		Ticker: "APPL",
+		Cost:   150,
+	}
+	err = repository.Add(app)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	app.Cost++
+	err = repository.Add(app)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	app.Ticker = "AMD"
+	err = repository.Add(app)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	fmt.Println(repository.GetAll())
+	fmt.Println(repository.GetByTicker("APPL"))
+	fmt.Println(repository.GetByTicker("AMD"))
 }
