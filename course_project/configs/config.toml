@@ -1,11 +1,11 @@
 [telegram]
-bot_key = "telegram_bot_key_value"
+bot_key = "2051853028:AAFTnnMJ6bzVzXTOlKF7wbS2t5x6DgePkFo"
 
 [kraken]
-api_key = "kraken_api_key_value"
-api_secret = "kraken_api_secret_value"
+api_key = "s2Ty4DtAJX4hiwcjKDQfdthfqu4FJhdMv9xHoZh8f6XhMa2unBpfjuQe"
+api_secret = "zUtoRRv0wEiuDdvPIdaAIMyCb9YgvR/t/ubMnBf5pMj7QimwaUExVTkKDmQr42p61STfOGNLXMHjtpsPhT9bsWqW"
 rest_url = "https://demo-futures.kraken.com/derivatives/api/v3"
 socket_url = "wss://demo-futures.kraken.com/ws/v1"
 
 [database]
-connection_string = "postgresql_conection_string_value"
+connection_string = "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable"
