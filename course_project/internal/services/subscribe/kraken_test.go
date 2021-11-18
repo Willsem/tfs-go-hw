@@ -2,7 +2,6 @@ package subscribe
 
 import (
 	"testing"
-	"time"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
 )
@@ -23,13 +22,17 @@ func TestSubscribeServiceOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	go func() {
-		for info := range service.GetChan() {
-			t.Log(info)
-		}
-	}()
+	t.Log("Success subsribed")
 
-	time.Sleep(2 * time.Second)
+	count := 2
+	for info := range service.GetChan() {
+		t.Log(info)
+		count--
+		if count == 0 {
+			break
+		}
+	}
+
 	err = service.Unsubscribe("PI_XBTUSD")
 	if err != nil {
 		t.Fatal(err)
