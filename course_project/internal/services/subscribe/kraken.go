@@ -11,7 +11,10 @@ import (
 )
 
 const (
-	pingSeconds = 59
+	pingSeconds            = 59
+	Candle1m    candleType = "candles_trade_1m"
+	Candle5m    candleType = "candles_trade_5m"
+	Candle1h    candleType = "candles_trade_1h"
 )
 
 type KrakenSubscribeService struct {
@@ -74,7 +77,7 @@ func (service *KrakenSubscribeService) GetChan() <-chan TickerInfo {
 func (service *KrakenSubscribeService) Subscribe(ticker string) error {
 	event := Event{
 		Event:      "subscribe",
-		Feed:       "ticker",
+		Feed:       string(Candle1m),
 		ProductIds: []string{ticker},
 	}
 	var response map[string]interface{}
@@ -109,7 +112,7 @@ func (service *KrakenSubscribeService) Subscribe(ticker string) error {
 func (service *KrakenSubscribeService) Unsubscribe(ticker string) error {
 	event := Event{
 		Event:      "unsubscribe",
-		Feed:       "ticker",
+		Feed:       string(Candle1m),
 		ProductIds: []string{ticker},
 	}
 	var response map[string]interface{}
@@ -124,6 +127,7 @@ func (service *KrakenSubscribeService) Unsubscribe(ticker string) error {
 	}
 
 	responseEvent, ok := response["event"]
+	fmt.Println(response)
 	if !ok {
 		return fmt.Errorf("unknown response")
 	}
@@ -154,11 +158,9 @@ func (service *KrakenSubscribeService) listenSocket(ctx context.Context) {
 				err := websocket.JSON.Receive(service.websocket, &data)
 				service.mutex.Unlock()
 
-				if err != nil {
-					continue
+				if err == nil {
+					service.tickerChan <- data
 				}
-
-				service.tickerChan <- data
 			}
 		}
 	}

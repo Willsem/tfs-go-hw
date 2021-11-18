@@ -1,5 +1,7 @@
 package subscribe
 
+type candleType string
+
 type SubscribeService interface {
 	GetChan() <-chan TickerInfo
 	Subscribe(ticker string) error
