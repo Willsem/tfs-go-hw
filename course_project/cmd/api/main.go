@@ -1,18 +1,13 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
-	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
-	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
-	"github.com/willsem/tfs-go-hw/course_project/pkg/postgres"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
 )
 
 var (
@@ -50,47 +45,9 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	pool, err := postgres.NewPool(config.Database.ConnectionString)
+	trading := trading.New(config.Kraken)
+	err := trading.OpenPositions()
 	if err != nil {
 		logger.Fatal(err)
 	}
-	defer pool.Close()
-
-	repository := applications.New(pool)
-
-	app := domain.Application{
-		Ticker: "APPL",
-		Cost:   150,
-		Type:   domain.Buy,
-	}
-	err = repository.Add(app)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	app.Cost++
-	err = repository.Add(app)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	app.Ticker = "AMD"
-	app.Type = domain.Sell
-	err = repository.Add(app)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	fmt.Println(repository.GetAll())
-	fmt.Println(repository.GetByTicker("APPL"))
-	fmt.Println(repository.GetByTicker("AMD"))
-
-	bot, err := telegram.NewBot(repository, logger, config.Telegram)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	bot.Start()
-
-	bufio.NewReader(os.Stdin).ReadBytes('\n')
 }

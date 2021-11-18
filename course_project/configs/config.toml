@@ -4,7 +4,7 @@ bot_key = "2051853028:AAFTnnMJ6bzVzXTOlKF7wbS2t5x6DgePkFo"
 [kraken]
 api_key = "s2Ty4DtAJX4hiwcjKDQfdthfqu4FJhdMv9xHoZh8f6XhMa2unBpfjuQe"
 api_secret = "zUtoRRv0wEiuDdvPIdaAIMyCb9YgvR/t/ubMnBf5pMj7QimwaUExVTkKDmQr42p61STfOGNLXMHjtpsPhT9bsWqW"
-rest_url = "https://demo-futures.kraken.com/derivatives/api/v3"
+rest_url = "https://demo-futures.kraken.com/derivatives"
 socket_url = "wss://demo-futures.kraken.com/ws/v1"
 
 [database]
