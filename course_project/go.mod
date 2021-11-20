@@ -5,13 +5,12 @@ go 1.17
 require (
 	github.com/BurntSushi/toml v0.4.1
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.4.0-beta.0
+	github.com/gorilla/websocket v1.4.2
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/sirupsen/logrus v1.8.1
-	golang.org/x/net v0.0.0-20211104170005-ce137452f963
 )
 
 require (
-	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.10.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
