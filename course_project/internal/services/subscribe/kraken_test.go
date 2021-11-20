@@ -14,10 +14,12 @@ func TestSubscribeServiceOk(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = service.Subscribe("PI_XBTUS")
+	t.Log("success")
+
+	err = service.Subscribe("PI_XBTUS", Candle1m)
 	t.Log(err)
 
-	err = service.Subscribe("PI_XBTUSD")
+	err = service.Subscribe("PI_XBTUSD", Candle1m)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,7 +35,7 @@ func TestSubscribeServiceOk(t *testing.T) {
 		}
 	}
 
-	err = service.Unsubscribe("PI_XBTUSD")
+	err = service.Unsubscribe("PI_XBTUSD", Candle1m)
 	if err != nil {
 		t.Fatal(err)
 	}

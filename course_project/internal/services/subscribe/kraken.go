@@ -2,186 +2,150 @@ package subscribe
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
-	"golang.org/x/net/websocket"
 )
 
 const (
-	pingSeconds            = 59
-	Candle1m    candleType = "candles_trade_1m"
-	Candle5m    candleType = "candles_trade_5m"
-	Candle1h    candleType = "candles_trade_1h"
+	Candle1m candleType = "candles_trade_1m"
+	Candle5m candleType = "candles_trade_5m"
+	Candle1h candleType = "candles_trade_1h"
+
+	sizeChan = 100
 )
 
 type KrakenSubscribeService struct {
-	websocket    *websocket.Conn
-	mutex        *sync.Mutex
-	tickerChan   chan TickerInfo
-	cancelCtx    func()
-	countTickers int
+	ws *websocket.Conn
+
+	writeMutex *sync.Mutex
+	tickers    chan TickerInfo
+	alerts     chan string
+	success    chan struct{}
+
+	cancelListen func()
 }
 
 func New(config config.Kraken) (*KrakenSubscribeService, error) {
-	ws, err := websocket.Dial(config.SocketUrl, "", "/")
+	ws, _, err := websocket.DefaultDialer.Dial(config.SocketUrl, nil)
 	if err != nil {
 		return nil, err
 	}
+	ws.SetReadDeadline(time.Time{})
 
-	var response map[string]interface{}
-	err = websocket.JSON.Receive(ws, &response)
-	if err != nil {
-		return nil, err
+	heartbeatEvent := event{
+		Event: "subscribe",
+		Feed:  "heartbeat",
 	}
-
-	responseEvent, ok := response["event"]
-	if !ok {
-		return nil, fmt.Errorf("connection error")
-	}
-
-	if responseEvent.(string) != "info" {
-		return nil, fmt.Errorf("connection error")
-	}
+	ws.WriteJSON(heartbeatEvent)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &KrakenSubscribeService{
-		websocket:    ws,
-		mutex:        &sync.Mutex{},
-		tickerChan:   make(chan TickerInfo),
-		cancelCtx:    cancel,
-		countTickers: 0,
+		ws:           ws,
+		cancelListen: cancel,
+		writeMutex:   &sync.Mutex{},
+		tickers:      make(chan TickerInfo, sizeChan),
+		alerts:       make(chan string, sizeChan),
+		success:      make(chan struct{}, sizeChan),
 	}
 
 	go service.listenSocket(ctx)
-	go service.pingSocket(ctx)
 
-	return service, nil
+	select {
+	case <-service.success:
+		return service, nil
+	case message := <-service.alerts:
+		return nil, errors.New(message)
+	}
 }
 
 func (service *KrakenSubscribeService) Close() error {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-	service.cancelCtx()
-	close(service.tickerChan)
-	return service.websocket.Close()
+	service.cancelListen()
+	close(service.tickers)
+	close(service.alerts)
+	close(service.success)
+	return service.ws.Close()
 }
 
 func (service *KrakenSubscribeService) GetChan() <-chan TickerInfo {
-	return service.tickerChan
+	return service.tickers
 }
 
-func (service *KrakenSubscribeService) Subscribe(ticker string) error {
-	event := Event{
+func (service *KrakenSubscribeService) Subscribe(ticker string, candle candleType) error {
+	service.writeMutex.Lock()
+	defer service.writeMutex.Unlock()
+
+	return service.sendEvent(event{
 		Event:      "subscribe",
-		Feed:       string(Candle1m),
+		Feed:       string(candle),
 		ProductIds: []string{ticker},
-	}
-	var response map[string]interface{}
-
-	service.mutex.Lock()
-	websocket.JSON.Send(service.websocket, event)
-	err := websocket.JSON.Receive(service.websocket, &response)
-	service.mutex.Unlock()
-
-	if err != nil {
-		return err
-	}
-
-	responseEvent, ok := response["event"]
-	if !ok {
-		return fmt.Errorf("unknown response")
-	}
-
-	if responseEvent.(string) != "subscribed" {
-		message, ok := response["message"].(string)
-		if !ok {
-			return fmt.Errorf("unknown error response:" + responseEvent.(string))
-		}
-
-		return fmt.Errorf(message)
-	}
-
-	service.countTickers++
-	return nil
+	})
 }
 
-func (service *KrakenSubscribeService) Unsubscribe(ticker string) error {
-	event := Event{
+func (service *KrakenSubscribeService) Unsubscribe(ticker string, candle candleType) error {
+	service.writeMutex.Lock()
+	defer service.writeMutex.Unlock()
+
+	return service.sendEvent(event{
 		Event:      "unsubscribe",
-		Feed:       string(Candle1m),
+		Feed:       string(candle),
 		ProductIds: []string{ticker},
-	}
-	var response map[string]interface{}
+	})
+}
 
-	service.mutex.Lock()
-	websocket.JSON.Send(service.websocket, event)
-	err := websocket.JSON.Receive(service.websocket, &response)
-	service.mutex.Unlock()
-
+func (service *KrakenSubscribeService) sendEvent(event event) error {
+	err := service.ws.WriteJSON(event)
 	if err != nil {
 		return err
 	}
 
-	responseEvent, ok := response["event"]
-	fmt.Println(response)
-	if !ok {
-		return fmt.Errorf("unknown response")
+	select {
+	case <-service.success:
+		return nil
+	case message := <-service.alerts:
+		return errors.New(message)
 	}
-
-	if responseEvent.(string) != "unsubscribed" {
-		message, ok := response["message"]
-		if !ok {
-			return fmt.Errorf("unknown error response:" + responseEvent.(string))
-		}
-
-		return fmt.Errorf(message.(string))
-	}
-
-	service.countTickers--
-	return nil
 }
 
 func (service *KrakenSubscribeService) listenSocket(ctx context.Context) {
-	data := TickerInfo{}
+	var resp event
 
 	for {
+		resp = event{}
+
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			if service.countTickers > 0 {
-				service.mutex.Lock()
-				err := websocket.JSON.Receive(service.websocket, &data)
-				service.mutex.Unlock()
-
-				if err == nil {
-					service.tickerChan <- data
-				}
-			}
+			service.ws.ReadJSON(&resp)
+			service.writeResponse(resp)
 		}
 	}
 }
 
-func (service *KrakenSubscribeService) pingSocket(ctx context.Context) {
-	nothing := struct{}{}
+func (service *KrakenSubscribeService) writeResponse(response event) {
+	switch {
+	case response.Event == "subscribed" || response.Event == "unsubscribed":
+		service.success <- struct{}{}
 
-	timeout, cancel := context.WithTimeout(context.Background(), time.Duration(pingSeconds*time.Second))
+	case response.Event == "alert":
+		service.alerts <- response.Message
 
-	for {
-		select {
-		case <-ctx.Done():
-			cancel()
-			return
-		case <-timeout.Done():
-			timeout, cancel = context.WithTimeout(context.Background(), time.Duration(pingSeconds*time.Second))
-			service.mutex.Lock()
-			websocket.JSON.Send(service.websocket, nothing)
-			websocket.Message.Receive(service.websocket, &nothing)
-			service.mutex.Unlock()
+	case response.Feed == string(Candle1m) ||
+		response.Feed == string(Candle5m) ||
+		response.Feed == string(Candle1h) ||
+		response.Feed == string(Candle1m)+"_snapshot" ||
+		response.Feed == string(Candle5m)+"_snapshot" ||
+		response.Feed == string(Candle1h)+"_snapshot":
+		tickerInfo := TickerInfo{
+			Feed:      response.Feed,
+			ProductId: response.ProductId,
+			Candle:    response.Candle,
 		}
+		service.tickers <- tickerInfo
 	}
 }

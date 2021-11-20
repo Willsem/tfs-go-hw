@@ -1,7 +1,10 @@
 package subscribe
 
-type Event struct {
-	Event      string   `json:"event"`
-	Feed       string   `json:"feed"`
-	ProductIds []string `json:"product_ids"`
+type event struct {
+	Event      string   `json:"event,omitempty"`
+	Feed       string   `json:"feed,omitempty"`
+	ProductIds []string `json:"product_ids,omitempty"`
+	ProductId  string   `json:"product_id,omitempty"`
+	Message    string   `json:"message,omitempty"`
+	Candle     Candle   `json:"candle,omitempty"`
 }

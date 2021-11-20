@@ -4,6 +4,6 @@ type candleType string
 
 type SubscribeService interface {
 	GetChan() <-chan TickerInfo
-	Subscribe(ticker string) error
-	Unsubscribe(ticker string) error
+	Subscribe(ticker string, candle candleType) error
+	Unsubscribe(ticker string, candle candleType) error
 }
