@@ -19,7 +19,8 @@ const (
 )
 
 type KrakenSubscribeService struct {
-	ws *websocket.Conn
+	ws     *websocket.Conn
+	config config.Kraken
 
 	writeMutex *sync.Mutex
 	tickers    chan TickerInfo
@@ -29,7 +30,7 @@ type KrakenSubscribeService struct {
 	cancelListen func()
 }
 
-func New(config config.Kraken) (*KrakenSubscribeService, error) {
+func connectWebsocket(config config.Kraken) (*websocket.Conn, error) {
 	ws, _, err := websocket.DefaultDialer.Dial(config.SocketUrl, nil)
 	if err != nil {
 		return nil, err
@@ -42,15 +43,27 @@ func New(config config.Kraken) (*KrakenSubscribeService, error) {
 	}
 	ws.WriteJSON(heartbeatEvent)
 
+	return ws, nil
+}
+
+func New(config config.Kraken) (*KrakenSubscribeService, error) {
+	ws, err := connectWebsocket(config)
+	if err != nil {
+		return nil, err
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	service := &KrakenSubscribeService{
-		ws:           ws,
+		ws:     ws,
+		config: config,
+
+		writeMutex: &sync.Mutex{},
+		tickers:    make(chan TickerInfo, sizeChan),
+		alerts:     make(chan string, sizeChan),
+		success:    make(chan struct{}, sizeChan),
+
 		cancelListen: cancel,
-		writeMutex:   &sync.Mutex{},
-		tickers:      make(chan TickerInfo, sizeChan),
-		alerts:       make(chan string, sizeChan),
-		success:      make(chan struct{}, sizeChan),
 	}
 
 	go service.listenSocket(ctx)
@@ -121,7 +134,14 @@ func (service *KrakenSubscribeService) listenSocket(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		default:
-			service.ws.ReadJSON(&resp)
+			err := service.ws.ReadJSON(&resp)
+			if err != nil {
+				service.ws, _ = connectWebsocket(service.config)
+				select {
+				case <-service.success:
+				case <-service.alerts:
+				}
+			}
 			service.writeResponse(resp)
 		}
 	}
