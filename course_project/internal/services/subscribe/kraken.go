@@ -8,6 +8,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
+	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
 )
 
 const (
@@ -23,7 +24,7 @@ type KrakenSubscribeService struct {
 	config config.Kraken
 
 	writeMutex *sync.Mutex
-	tickers    chan TickerInfo
+	tickers    chan domain.TickerInfo
 	alerts     chan string
 	success    chan struct{}
 
@@ -59,7 +60,7 @@ func New(config config.Kraken) (*KrakenSubscribeService, error) {
 		config: config,
 
 		writeMutex: &sync.Mutex{},
-		tickers:    make(chan TickerInfo, sizeChan),
+		tickers:    make(chan domain.TickerInfo, sizeChan),
 		alerts:     make(chan string, sizeChan),
 		success:    make(chan struct{}, sizeChan),
 
@@ -84,7 +85,7 @@ func (service *KrakenSubscribeService) Close() error {
 	return service.ws.Close()
 }
 
-func (service *KrakenSubscribeService) GetChan() <-chan TickerInfo {
+func (service *KrakenSubscribeService) GetChan() <-chan domain.TickerInfo {
 	return service.tickers
 }
 
@@ -161,7 +162,7 @@ func (service *KrakenSubscribeService) writeResponse(response event) {
 		response.Feed == string(Candle1m)+"_snapshot" ||
 		response.Feed == string(Candle5m)+"_snapshot" ||
 		response.Feed == string(Candle1h)+"_snapshot":
-		tickerInfo := TickerInfo{
+		tickerInfo := domain.TickerInfo{
 			Feed:      response.Feed,
 			ProductId: response.ProductId,
 			Candle:    response.Candle,

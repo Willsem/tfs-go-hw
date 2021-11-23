@@ -1,4 +1,4 @@
-package subscribe
+package domain
 
 type TickerInfo struct {
 	Feed      string
