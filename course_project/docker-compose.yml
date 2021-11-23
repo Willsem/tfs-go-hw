@@ -1,6 +1,18 @@
 version: '3.9'
 
 services:
+  server:
+    container_name: trading-server
+    image: willsem/tfs-trading-bot:latest
+    volumes:
+      - ./configs:/configs
+      - ./logs:/app/logs
+    ports:
+      - '80:8080'
+    restart: always
+    networks:
+      - trading-net
+
   postgres:
     container_name: trading-database
     image: library/postgres:13
