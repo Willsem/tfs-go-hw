@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/BurntSushi/toml v0.4.1
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.4.0-beta.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/jackc/pgx/v4 v4.13.0
