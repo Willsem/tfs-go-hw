@@ -24,7 +24,7 @@ jobs:
         run: cd course_project && make test
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: alpine-latest
     name: 'Build'
     steps:
       - name: 'Install Go'

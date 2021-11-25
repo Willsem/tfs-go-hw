@@ -1,8 +1,9 @@
-FROM ubuntu:latest
-
-RUN apk update && apk add --no-cache git ca-certificates && update-ca-certificates
+FROM alpine:latest
 
 WORKDIR /app
+
+RUN apk --no-cache add ca-certificates
+
 COPY ./course_project/api .
 RUN chmod +x ./api
 
