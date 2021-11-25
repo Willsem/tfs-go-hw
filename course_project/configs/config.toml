@@ -9,3 +9,6 @@ socket_url = "wss://demo-futures.kraken.com/ws/v1"
 
 [database]
 connection_string = "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable"
+
+[server]
+listen_addr = ":8080"

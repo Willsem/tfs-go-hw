@@ -89,8 +89,8 @@ func main() {
 	tradingBotHandler := handlers.NewTradingBotHandler(tradingBot, logger)
 	r.Mount("/api/v1/", tradingBotHandler.Routes())
 
-	logger.Info("listen :8080")
-	if err = http.ListenAndServe(":8080", r); err != nil {
+	logger.Info("listen " + parsedConfig.Server.ListenAddr)
+	if err = http.ListenAndServe(parsedConfig.Server.ListenAddr, r); err != nil {
 		logger.Fatal(err)
 	}
 }
