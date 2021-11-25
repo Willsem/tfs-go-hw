@@ -31,8 +31,8 @@ services:
   migrate:
     image: migrate/migrate
     volumes:
-      - ./migrations:/migrations
-    command: ["migrate", "-path", "/migrations", "-database",  "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable", "-verbose", "up" ]
+      - ./migration:/migration
+    command: ["migrate", "-path", "/migration", "-database",  "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable", "-verbose", "up" ]
     links:
       - postgres
     networks:
