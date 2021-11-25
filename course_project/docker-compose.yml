@@ -21,7 +21,6 @@ services:
     environment:
       POSTGRES_USER: trading
       POSTGRES_PASSWORD: 123456
-      POSTGRES_HOST_AUTH_METHOD: trust
     ports:
       - '5432:5432'
     restart: always
@@ -32,7 +31,7 @@ services:
     image: migrate/migrate
     volumes:
       - ./migration:/migration
-    command: ["migrate", "-path", "/migration", "-database",  "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable", "-verbose", "up" ]
+    command: ["-path", "/migration", "-database",  "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable", "-verbose", "up" ]
     links:
       - postgres
     networks:
