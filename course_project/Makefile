@@ -10,6 +10,9 @@ run:
 debug:
 	go run -v ./cmd/api -debug
 
+test:
+	go test ./...
+
 migrateup:
 	migrate -path db/migration -database $(POSTRESQL_CONNECTION_STRING) -verbose up
 
