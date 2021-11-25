@@ -7,7 +7,6 @@ import (
 	"github.com/BurntSushi/toml"
 	log "github.com/sirupsen/logrus"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
 )
 
 var (
@@ -40,14 +39,8 @@ func main() {
 
 	logger.Info("Path of configuration file: ", configPath)
 
-	var config config.Toml
-	if _, err := toml.DecodeFile(configPath, &config); err != nil {
-		logger.Fatal(err)
-	}
-
-	trading := trading.New(config.Kraken)
-	err := trading.OpenPositions()
-	if err != nil {
+	var parsedConfig config.Toml
+	if _, err := toml.DecodeFile(configPath, &parsedConfig); err != nil {
 		logger.Fatal(err)
 	}
 }

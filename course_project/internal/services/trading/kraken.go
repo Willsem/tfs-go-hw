@@ -6,12 +6,19 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading/tradingdto"
+)
+
+const apiv3 = "/api/v3"
+
+var (
+	UnknownResponseError = errors.New("unknown response")
 )
 
 type KrakenTradingService struct {
@@ -28,33 +35,69 @@ func New(config config.Kraken) *KrakenTradingService {
 	}
 }
 
-const endpointOpenPositions = "/api/v3/openpositions"
+const (
+	endpointOpenPositions = apiv3 + "/openpositions"
+	methodOpenPositions   = http.MethodGet
+)
 
-func (service *KrakenTradingService) OpenPositions() error {
-	res, err := service.sendRequest(http.MethodGet, endpointOpenPositions, "")
+func (service *KrakenTradingService) OpenPositions() ([]tradingdto.Position, error) {
+	res, err := service.sendRequest(methodOpenPositions, endpointOpenPositions, "")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	fmt.Println(res)
-
-	return nil
-}
-
-const endpointSendOrder = "/api/v3/sendorder"
-
-func (service *KrakenTradingService) SendOrder(order Order) error {
-	postData := ""
-	_, err := service.sendRequest(http.MethodGet, endpointSendOrder, postData)
-	if err != nil {
-		return err
+	resp, ok := res["openPositions"]
+	if !ok {
+		return nil, UnknownResponseError
 	}
 
-	return nil
+	var positions []tradingdto.Position
+	j, err := json.Marshal(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(j, &positions)
+	if err != nil {
+		return nil, err
+	}
+
+	return positions, nil
 }
 
-func (service *KrakenTradingService) CancelAllOrders() error {
-	return nil
+const (
+	endpointSendOrder = apiv3 + "/sendorder"
+	methodSendOrder   = http.MethodPost
+)
+
+func (service *KrakenTradingService) SendOrder(order tradingdto.Order) (OrderStatus, error) {
+	postData := order.GetPostData()
+	res, err := service.sendRequest(methodSendOrder, endpointSendOrder, postData)
+	if err != nil {
+		return Empty, err
+	}
+
+	resp, ok := res["sendStatus"]
+	if !ok {
+		return Empty, UnknownResponseError
+	}
+
+	respMap, ok := resp.(map[string]interface{})
+	if !ok {
+		return Empty, UnknownResponseError
+	}
+
+	status, ok := respMap["status"]
+	if !ok {
+		return Empty, UnknownResponseError
+	}
+
+	statusString, ok := status.(string)
+	if !ok {
+		return Empty, UnknownResponseError
+	}
+
+	return OrderStatus(statusString), nil
 }
 
 func (service *KrakenTradingService) generateAuthent(endpoint string, postData string) (string, error) {
@@ -105,6 +148,15 @@ func (service *KrakenTradingService) sendRequest(
 	err = json.Unmarshal(data, &result)
 	if err != nil {
 		return nil, err
+	}
+
+	if v, ok := result["result"]; !ok || v != "success" {
+		errorMessage, ok := result["error"]
+		if !ok {
+			return nil, UnknownResponseError
+		}
+
+		return nil, errors.New(errorMessage.(string))
 	}
 
 	return result, nil
