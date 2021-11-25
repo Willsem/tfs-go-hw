@@ -6,11 +6,17 @@ const (
 	initialSize = 100
 )
 
-type IndicatorServiceImpl struct {
+type TripleCandlesTemplate struct {
 	candles map[string][]domain.Candle
 }
 
-func (service *IndicatorServiceImpl) MakeDecision(ticker domain.TickerInfo) Decision {
+func NewTripleCandlesTemplate() *TripleCandlesTemplate {
+	return &TripleCandlesTemplate{
+		candles: make(map[string][]domain.Candle),
+	}
+}
+
+func (service *TripleCandlesTemplate) MakeDecision(ticker domain.TickerInfo) Decision {
 	if _, ok := service.candles[ticker.ProductId]; !ok {
 		service.candles[ticker.ProductId] = make([]domain.Candle, initialSize)
 		return Nothing
@@ -31,7 +37,7 @@ func (service *IndicatorServiceImpl) MakeDecision(ticker domain.TickerInfo) Deci
 	return service.findTemplates(service.candles[ticker.ProductId])
 }
 
-func (service *IndicatorServiceImpl) findTemplates(candles []domain.Candle) Decision {
+func (service *TripleCandlesTemplate) findTemplates(candles []domain.Candle) Decision {
 	red := 0
 	green := 0
 	for _, candle := range candles[len(candles)-3:] {

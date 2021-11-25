@@ -47,7 +47,7 @@ func connectWebsocket(config config.Kraken) (*websocket.Conn, error) {
 	return ws, nil
 }
 
-func New(config config.Kraken) (*KrakenSubscribeService, error) {
+func NewKrakenSubscribeService(config config.Kraken) (*KrakenSubscribeService, error) {
 	ws, err := connectWebsocket(config)
 	if err != nil {
 		return nil, err

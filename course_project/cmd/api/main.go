@@ -2,11 +2,22 @@ package main
 
 import (
 	"flag"
+	"net/http"
 	"os"
 
 	"github.com/BurntSushi/toml"
+	"github.com/go-chi/chi/v5"
 	log "github.com/sirupsen/logrus"
+
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
+	"github.com/willsem/tfs-go-hw/course_project/internal/handlers"
+	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/indicator"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/subscribe"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/tradingbot"
+	"github.com/willsem/tfs-go-hw/course_project/pkg/postgres"
 )
 
 var (
@@ -41,6 +52,45 @@ func main() {
 
 	var parsedConfig config.Toml
 	if _, err := toml.DecodeFile(configPath, &parsedConfig); err != nil {
+		logger.Fatal(err)
+	}
+
+	pgsqlPool, err := postgres.NewPool(parsedConfig.Database.ConnectionString)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	appRepo := applications.New(pgsqlPool)
+
+	telegramBot, err := telegram.NewBot(appRepo, logger, parsedConfig.Telegram)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	telegramBot.Start()
+
+	subscribeService, err := subscribe.NewKrakenSubscribeService(parsedConfig.Kraken)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	tradingService := trading.NewKrakenTradingService(parsedConfig.Kraken)
+
+	indicatorService := indicator.NewTripleCandlesTemplate()
+
+	tradingBot := tradingbot.New(subscribeService, tradingService, indicatorService, logger)
+	err = tradingBot.Start()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	r := chi.NewRouter()
+
+	tradingBotHandler := handlers.NewTradingBotHandler(tradingBot, logger)
+	r.Mount("/api/v1/", tradingBotHandler.Routes())
+
+	logger.Info("listen :8080")
+	if err = http.ListenAndServe(":8080", r); err != nil {
 		logger.Fatal(err)
 	}
 }

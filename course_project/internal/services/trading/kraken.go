@@ -26,7 +26,7 @@ type KrakenTradingService struct {
 	client http.Client
 }
 
-func New(config config.Kraken) *KrakenTradingService {
+func NewKrakenTradingService(config config.Kraken) *KrakenTradingService {
 	return &KrakenTradingService{
 		config: config,
 		client: http.Client{
