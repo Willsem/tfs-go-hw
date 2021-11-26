@@ -63,7 +63,7 @@ func (bot *BotImpl) listen() {
 		text := update.Message.Text
 		parsed := strings.Split(text, " ")
 
-		var reply string
+		var reply string = ""
 		switch {
 		case parsed[0] == "/subscribe":
 			chatID := update.Message.Chat.ID
@@ -74,7 +74,7 @@ func (bot *BotImpl) listen() {
 				}
 			}
 
-			if reply != "" {
+			if reply == "" {
 				bot.subscribed = append(bot.subscribed, update.Message.Chat.ID)
 				reply = "Подписка на заявки успешно совершена"
 			}
@@ -120,7 +120,7 @@ func (bot *BotImpl) listen() {
 				}
 			}
 
-		case parsed[0] == "/help":
+		case parsed[0] == "/start" || parsed[0] == "/help":
 			reply = "/all - Получить список всех заявок\n"
 			reply += "/ticker <ticker> - Получить список заявок по тикеру"
 
