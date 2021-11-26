@@ -64,7 +64,8 @@ func main() {
 
 	telegramBot, err := telegram.NewBot(appRepo, logger, parsedConfig.Telegram)
 	if err != nil {
-		logger.Fatal(err)
+		// logger.Fatal(err)
+		logger.Error(err)
 	}
 
 	telegramBot.Start()
