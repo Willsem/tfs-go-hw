@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
+	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/willsem/tfs-go-hw/course_project/internal/dto"
@@ -26,26 +27,71 @@ func NewTradingBotHandler(bot tradingbot.TradingBot, logger log.Logger) *Trading
 func (handler *TradingBotHandler) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/health", handler.HealthCheck)
-	r.Post("/ticker/add", handler.addTicker)
-	r.Post("/ticker/remove", handler.removeTicker)
+	r.Get("/health", handler.healthCheck)
+
+	r.Put("/continue", handler.continueWork)
+	r.Put("/pause", handler.pauseWork)
+
+	r.Route("/ticker/{ticker}", func(r chi.Router) {
+		r.Use(handler.tickerContext)
+
+		r.Put("/add", handler.addTicker)
+		r.Put("/remove", handler.removeTicker)
+	})
+
+	r.Put("/changesize/{size}", handler.changeSize)
 
 	return r
 }
 
-func (handler *TradingBotHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
+func (handler *TradingBotHandler) healthCheck(w http.ResponseWriter, r *http.Request) {
 	response.Respond(w, http.StatusOK, dto.Message{Message: "Works"})
 }
 
-func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Request) {
-	ticker := dto.TickerName{}
-	if err := json.NewDecoder(r.Body).Decode(&ticker); err != nil {
-		response.Respond(w, http.StatusBadRequest, dto.Message{Message: "Incorrect body"})
+func (handler *TradingBotHandler) continueWork(w http.ResponseWriter, r *http.Request) {
+	if handler.bot.IsWorking() {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: "Bot is already working"})
 		return
 	}
-	defer r.Body.Close()
 
-	if err := handler.bot.AddTicker(ticker.Ticker); err != nil {
+	if err := handler.bot.Continue(); err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
+		return
+	}
+
+	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
+}
+
+func (handler *TradingBotHandler) pauseWork(w http.ResponseWriter, r *http.Request) {
+	if !handler.bot.IsWorking() {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: "Bot has been already paused"})
+		return
+	}
+
+	if err := handler.bot.Pause(); err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
+		return
+	}
+
+	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
+}
+
+func (handler *TradingBotHandler) tickerContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ticker := chi.URLParam(r, "ticker")
+		ctx := context.WithValue(r.Context(), "ticker", ticker)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Request) {
+	ticker, ok := r.Context().Value("ticker").(string)
+	if !ok {
+		response.Respond(w, http.StatusInternalServerError, dto.Message{Message: "Internal error"})
+		return
+	}
+
+	if err := handler.bot.AddTicker(ticker); err != nil {
 		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
 		return
 	}
@@ -54,17 +100,27 @@ func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Reque
 }
 
 func (handler *TradingBotHandler) removeTicker(w http.ResponseWriter, r *http.Request) {
-	ticker := dto.TickerName{}
-	if err := json.NewDecoder(r.Body).Decode(&ticker); err != nil {
-		response.Respond(w, http.StatusBadRequest, dto.Message{Message: "Incorrect body"})
+	ticker, ok := r.Context().Value("ticker").(string)
+	if !ok {
+		response.Respond(w, http.StatusInternalServerError, dto.Message{Message: "Internal error"})
 		return
 	}
-	defer r.Body.Close()
 
-	if err := handler.bot.RemoveTicker(ticker.Ticker); err != nil {
+	if err := handler.bot.RemoveTicker(ticker); err != nil {
 		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
 		return
 	}
 
+	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
+}
+
+func (handler *TradingBotHandler) changeSize(w http.ResponseWriter, r *http.Request) {
+	size, err := strconv.ParseUint(chi.URLParam(r, "size"), 10, 64)
+	if err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
+		return
+	}
+
+	handler.bot.ChangeSize(size)
 	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
 }

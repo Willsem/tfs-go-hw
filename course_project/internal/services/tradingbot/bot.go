@@ -18,6 +18,7 @@ type TradingBotImpl struct {
 	logger                 log.Logger
 	tickers                map[string]uint64
 	buySize                uint64
+	isWorking              bool
 }
 
 func New(
@@ -37,6 +38,7 @@ func New(
 		logger:                 logger,
 		tickers:                make(map[string]uint64),
 		buySize:                1,
+		isWorking:              false,
 	}
 }
 
@@ -45,6 +47,10 @@ func (bot *TradingBotImpl) Start() error {
 }
 
 func (bot *TradingBotImpl) Stop() {
+}
+
+func (bot *TradingBotImpl) IsWorking() bool {
+	return bot.isWorking
 }
 
 func (bot *TradingBotImpl) Continue() error {

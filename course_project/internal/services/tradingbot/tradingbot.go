@@ -1,11 +1,12 @@
 package tradingbot
 
 type TradingBot interface {
-	Start() error
-
+	IsWorking() bool
 	Continue() error
 	Pause() error
 
 	AddTicker(ticker string) error
 	RemoveTicker(ticker string) error
+
+	ChangeSize(newSize uint64)
 }
