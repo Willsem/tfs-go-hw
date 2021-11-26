@@ -14,6 +14,7 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/indicator"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/subscribe"
+	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/tradingbot"
 	"github.com/willsem/tfs-go-hw/course_project/pkg/postgres"
@@ -61,13 +62,12 @@ func main() {
 
 	appRepo := applications.New(pgsqlPool)
 
-	/*telegramBot, err := telegram.NewBot(appRepo, logger, parsedConfig.Telegram)
+	telegramBot, err := telegram.NewBot(appRepo, logger, parsedConfig.Telegram)
 	if err != nil {
 		logger.Fatal(err)
-		logger.Error(err)
 	}
 
-	telegramBot.Start()*/
+	telegramBot.Start()
 
 	subscribeService, err := subscribe.NewKrakenSubscribeService(parsedConfig.Kraken)
 	if err != nil {
@@ -78,7 +78,7 @@ func main() {
 
 	indicatorService := indicator.NewTripleCandlesTemplate()
 
-	tradingBot := tradingbot.New(subscribeService, tradingService, indicatorService, appRepo, logger)
+	tradingBot := tradingbot.New(subscribeService, tradingService, indicatorService, appRepo, telegramBot, logger)
 	err = tradingBot.Start()
 	if err != nil {
 		logger.Fatal(err)

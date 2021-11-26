@@ -34,7 +34,7 @@ func (handler *TradingBotHandler) Routes() chi.Router {
 }
 
 func (handler *TradingBotHandler) HealthCheck(w http.ResponseWriter, r *http.Request) {
-	response.Respond(w, http.StatusOK, dto.Message{Message: "works"})
+	response.Respond(w, http.StatusOK, dto.Message{Message: "Works"})
 }
 
 func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Request) {
@@ -44,6 +44,13 @@ func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	defer r.Body.Close()
+
+	if err := handler.bot.AddTicker(ticker.Ticker); err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
+		return
+	}
+
+	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
 }
 
 func (handler *TradingBotHandler) removeTicker(w http.ResponseWriter, r *http.Request) {
@@ -53,4 +60,11 @@ func (handler *TradingBotHandler) removeTicker(w http.ResponseWriter, r *http.Re
 		return
 	}
 	defer r.Body.Close()
+
+	if err := handler.bot.RemoveTicker(ticker.Ticker); err != nil {
+		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})
+		return
+	}
+
+	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
 }

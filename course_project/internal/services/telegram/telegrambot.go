@@ -10,9 +10,10 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
 )
 
-type Bot struct {
+type BotImpl struct {
 	applicationsRepository applications.ApplicationsRepository
 	botAPI                 *tgbotapi.BotAPI
+	subscribed             []int64
 	logger                 log.Logger
 }
 
@@ -20,24 +21,36 @@ func NewBot(
 	repo applications.ApplicationsRepository,
 	logger log.Logger,
 	config config.Telegram,
-) (*Bot, error) {
+) (*BotImpl, error) {
 	bot, err := tgbotapi.NewBotAPI(config.BotKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Bot{
+	return &BotImpl{
 		applicationsRepository: repo,
 		logger:                 logger,
 		botAPI:                 bot,
+		subscribed:             make([]int64, 0),
 	}, nil
 }
 
-func (bot *Bot) Start() {
+func (bot *BotImpl) Start() {
 	go bot.listen()
 }
 
-func (bot *Bot) listen() {
+func (bot *BotImpl) SendSubscribedMessage(message string) {
+	for _, id := range bot.subscribed {
+		msg := tgbotapi.NewMessage(id, message)
+
+		_, err := bot.botAPI.Send(msg)
+		if err != nil {
+			bot.logger.Error(err)
+		}
+	}
+}
+
+func (bot *BotImpl) listen() {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates := bot.botAPI.GetUpdatesChan(u)
@@ -52,6 +65,37 @@ func (bot *Bot) listen() {
 
 		var reply string
 		switch {
+		case parsed[0] == "/subscribe":
+			chatID := update.Message.Chat.ID
+			for _, id := range bot.subscribed {
+				if chatID == id {
+					reply = "Вы уже подписаны"
+					break
+				}
+			}
+
+			if reply != "" {
+				bot.subscribed = append(bot.subscribed, update.Message.Chat.ID)
+				reply = "Подписка на заявки успешно совершена"
+			}
+
+		case parsed[0] == "/unsubscribe":
+			chatID := update.Message.Chat.ID
+			index := -1
+			for i, id := range bot.subscribed {
+				if chatID == id {
+					index = i
+					break
+				}
+			}
+
+			if index != -1 {
+				bot.subscribed = append(bot.subscribed[:index], bot.subscribed[index+1:]...)
+				reply = "Отписка от заявок успешно совершена"
+			} else {
+				reply = "Вы не подписаны"
+			}
+
 		case parsed[0] == "/all":
 			apps, err := bot.applicationsRepository.GetAll()
 			if err != nil {
