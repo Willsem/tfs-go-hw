@@ -17,6 +17,7 @@ type TradingBotImpl struct {
 	telegramBot            telegram.Bot
 	logger                 log.Logger
 	tickers                map[string]uint64
+	buySize                uint64
 }
 
 func New(
@@ -35,11 +36,15 @@ func New(
 		telegramBot:            telegramBot,
 		logger:                 logger,
 		tickers:                make(map[string]uint64),
+		buySize:                1,
 	}
 }
 
 func (bot *TradingBotImpl) Start() error {
 	return nil
+}
+
+func (bot *TradingBotImpl) Stop() {
 }
 
 func (bot *TradingBotImpl) Continue() error {
@@ -51,10 +56,13 @@ func (bot *TradingBotImpl) Pause() error {
 }
 
 func (bot *TradingBotImpl) AddTicker(ticker string) error {
-	bot.telegramBot.SendSubscribedMessage(ticker)
 	return nil
 }
 
 func (bot *TradingBotImpl) RemoveTicker(ticker string) error {
 	return nil
+}
+
+func (bot *TradingBotImpl) ChangeSize(newSize uint64) {
+	bot.buySize = newSize
 }
