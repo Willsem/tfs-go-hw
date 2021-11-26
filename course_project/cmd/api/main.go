@@ -90,7 +90,15 @@ func main() {
 	r.Mount("/api/v1/", tradingBotHandler.Routes())
 
 	logger.Info("listen " + parsedConfig.Server.ListenAddr)
-	if err = http.ListenAndServe(parsedConfig.Server.ListenAddr, r); err != nil {
+
+	if debug {
+		err = http.ListenAndServe(parsedConfig.Server.ListenAddr, r)
+	} else {
+		conf := parsedConfig.Server
+		err = http.ListenAndServeTLS(conf.ListenAddr, conf.CertFile, conf.KeyFile, r)
+	}
+
+	if err != nil {
 		logger.Fatal(err)
 	}
 }
