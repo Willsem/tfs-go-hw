@@ -8,4 +8,5 @@ type SubscribeService interface {
 	GetChan() <-chan domain.TickerInfo
 	Subscribe(ticker string, candle candleType) error
 	Unsubscribe(ticker string, candle candleType) error
+	Close() error
 }

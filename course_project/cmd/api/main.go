@@ -83,6 +83,7 @@ func main() {
 	if err != nil {
 		logger.Fatal(err)
 	}
+	defer tradingBot.Stop()
 
 	r := chi.NewRouter()
 

@@ -39,7 +39,9 @@ func (handler *TradingBotHandler) Routes() chi.Router {
 		r.Put("/remove", handler.removeTicker)
 	})
 
-	r.Put("/changesize/{size}", handler.changeSize)
+	r.Route("/setup", func(r chi.Router) {
+		r.Put("/size/{size}", handler.setupSize)
+	})
 
 	return r
 }
@@ -114,7 +116,7 @@ func (handler *TradingBotHandler) removeTicker(w http.ResponseWriter, r *http.Re
 	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
 }
 
-func (handler *TradingBotHandler) changeSize(w http.ResponseWriter, r *http.Request) {
+func (handler *TradingBotHandler) setupSize(w http.ResponseWriter, r *http.Request) {
 	size, err := strconv.ParseUint(chi.URLParam(r, "size"), 10, 64)
 	if err != nil {
 		response.Respond(w, http.StatusBadRequest, dto.Message{Message: err.Error()})

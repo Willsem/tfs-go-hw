@@ -15,14 +15,14 @@ const (
 type Application struct {
 	Id        uint64
 	Ticker    string
-	Cost      int64
-	Size      int64
+	Cost      float64
+	Size      uint64
 	CreatedAt time.Time
 	Type      applicationType
 }
 
 func (app Application) String() string {
-	return fmt.Sprintf("%s $%s\nСтоимость: %d\nРазмер: %d\nВремя заявки: %s\n\n",
+	return fmt.Sprintf("%s $%s\nСтоимость: %f\nРазмер: %d\nВремя заявки: %s\n\n",
 		app.Type, app.Ticker, app.Cost, app.Size, app.CreatedAt.Format("01-02-2006 15:04:05"))
 }
 
