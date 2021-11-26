@@ -87,7 +87,7 @@ func main() {
 	r := chi.NewRouter()
 
 	tradingBotHandler := handlers.NewTradingBotHandler(tradingBot, logger)
-	r.Mount("/api/v1/", tradingBotHandler.Routes())
+	r.Mount("/trading", tradingBotHandler.Routes())
 
 	logger.Info("listen " + parsedConfig.Server.ListenAddr)
 
