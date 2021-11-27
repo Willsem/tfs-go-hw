@@ -41,9 +41,9 @@ func (service *TripleCandlesTemplate) findTemplates(candles []domain.Candle) Dec
 	red := 0
 	green := 0
 	for _, candle := range candles[len(candles)-3:] {
-		if candle.Open > candle.Close {
+		if candle.Open < candle.Close {
 			green++
-		} else {
+		} else if candle.Close < candle.Open {
 			red++
 		}
 	}

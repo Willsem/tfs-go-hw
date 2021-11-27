@@ -106,6 +106,8 @@ func (bot *TradingBotImpl) workWithTickers(ctx context.Context) {
 			bot.subscribeService.Close()
 
 		case ticker := <-tickers:
+			bot.logger.Info(ticker)
+
 			decision := bot.indicatorService.MakeDecision(ticker)
 
 			switch decision {
@@ -119,28 +121,28 @@ func (bot *TradingBotImpl) workWithTickers(ctx context.Context) {
 				})
 				if err != nil {
 					bot.logger.Error(err)
-				}
-
-				if resp == trading.Placed {
-					app := domain.Application{
-						Ticker: ticker.ProductId,
-						Cost:   float64(ticker.Candle.Close),
-						Size:   bot.buySize,
-						Type:   domain.Buy,
-					}
-
-					bot.applicationsRepository.Add(app)
-					bot.telegramBot.SendSubscribedMessage(app.String())
-
-					if _, ok := bot.tickers[ticker.ProductId]; !ok {
-						bot.tickers[ticker.ProductId] = bot.buySize
-					} else {
-						bot.tickers[ticker.ProductId] += bot.buySize
-					}
 				} else {
-					bot.logger.Error(
-						fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
-					)
+					if resp == trading.Placed {
+						app := domain.Application{
+							Ticker: ticker.ProductId,
+							Cost:   float64(ticker.Candle.Close),
+							Size:   bot.buySize,
+							Type:   domain.Buy,
+						}
+
+						bot.applicationsRepository.Add(app)
+						bot.telegramBot.SendSubscribedMessage(app.String())
+
+						if _, ok := bot.tickers[ticker.ProductId]; !ok {
+							bot.tickers[ticker.ProductId] = bot.buySize
+						} else {
+							bot.tickers[ticker.ProductId] += bot.buySize
+						}
+					} else {
+						bot.logger.Error(
+							fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
+						)
+					}
 				}
 
 			case indicator.Sell:
@@ -161,23 +163,23 @@ func (bot *TradingBotImpl) workWithTickers(ctx context.Context) {
 					})
 					if err != nil {
 						bot.logger.Error(err)
-					}
-
-					if resp == trading.Cancelled {
-						app := domain.Application{
-							Ticker: ticker.ProductId,
-							Cost:   float64(ticker.Candle.Close),
-							Size:   min,
-							Type:   domain.Buy,
-						}
-
-						bot.applicationsRepository.Add(app)
-						bot.telegramBot.SendSubscribedMessage(app.String())
-						bot.tickers[ticker.ProductId] -= min
 					} else {
-						bot.logger.Error(
-							fmt.Sprintf("can't sell %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
-						)
+						if resp == trading.Cancelled {
+							app := domain.Application{
+								Ticker: ticker.ProductId,
+								Cost:   float64(ticker.Candle.Close),
+								Size:   min,
+								Type:   domain.Buy,
+							}
+
+							bot.applicationsRepository.Add(app)
+							bot.telegramBot.SendSubscribedMessage(app.String())
+							bot.tickers[ticker.ProductId] -= min
+						} else {
+							bot.logger.Error(
+								fmt.Sprintf("can't sell %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
+							)
+						}
 					}
 				}
 			}
