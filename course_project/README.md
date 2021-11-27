@@ -1,5 +1,7 @@
 # Курсовой проект TFS: Golang
 
+Доступен на: [https://willsem.online:8080](https://willsem.online:8080)
+
 ## Архитектура приложения
 
 ![modules](./img/modules.png)
