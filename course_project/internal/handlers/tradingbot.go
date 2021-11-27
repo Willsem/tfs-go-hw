@@ -35,8 +35,8 @@ func (handler *TradingBotHandler) Routes() chi.Router {
 	r.Route("/ticker/{ticker}", func(r chi.Router) {
 		r.Use(handler.tickerContext)
 
-		r.Put("/add", handler.addTicker)
-		r.Put("/remove", handler.removeTicker)
+		r.Post("/add", handler.addTicker)
+		r.Delete("/remove", handler.removeTicker)
 	})
 
 	r.Route("/setup", func(r chi.Router) {
