@@ -101,6 +101,8 @@ func (bot *TradingBotImpl) AddTicker(ticker string) error {
 		return err
 	}
 
+	bot.tickers[ticker] = 0
+
 	return nil
 }
 
