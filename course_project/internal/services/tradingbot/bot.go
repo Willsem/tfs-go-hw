@@ -3,6 +3,7 @@ package tradingbot
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
 	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
@@ -25,6 +26,8 @@ type TradingBotImpl struct {
 	buySize                uint64
 	isWorking              bool
 	cancelCtx              func()
+	sizeMutex              *sync.RWMutex
+	isWorkingMutex         *sync.RWMutex
 }
 
 func New(
@@ -45,6 +48,8 @@ func New(
 		tickers:                make(map[string]uint64),
 		buySize:                1,
 		isWorking:              false,
+		sizeMutex:              &sync.RWMutex{},
+		isWorkingMutex:         &sync.RWMutex{},
 	}
 }
 
@@ -63,17 +68,31 @@ func (bot *TradingBotImpl) Stop() {
 }
 
 func (bot *TradingBotImpl) IsWorking() bool {
+	bot.isWorkingMutex.RLock()
+	defer bot.isWorkingMutex.RUnlock()
 	return bot.isWorking
 }
 
 func (bot *TradingBotImpl) Continue() error {
+	bot.isWorkingMutex.Lock()
 	bot.isWorking = true
+	bot.isWorkingMutex.Unlock()
 	return nil
 }
 
 func (bot *TradingBotImpl) Pause() error {
+	bot.isWorkingMutex.Lock()
 	bot.isWorking = false
+	bot.isWorkingMutex.Unlock()
 	return nil
+}
+
+func (bot *TradingBotImpl) GetTickers() []string {
+	result := make([]string, 0, len(bot.tickers))
+	for key := range bot.tickers {
+		result = append(result, key)
+	}
+	return result
 }
 
 func (bot *TradingBotImpl) AddTicker(ticker string) error {
@@ -91,97 +110,127 @@ func (bot *TradingBotImpl) RemoveTicker(ticker string) error {
 		return err
 	}
 
+	if _, ok := bot.tickers[ticker]; ok {
+		delete(bot.tickers, ticker)
+	}
+
 	return nil
 }
 
 func (bot *TradingBotImpl) ChangeSize(newSize uint64) {
+	bot.sizeMutex.Lock()
 	bot.buySize = newSize
+	bot.sizeMutex.Unlock()
 }
 
 func (bot *TradingBotImpl) workWithTickers(ctx context.Context) {
 	tickers := bot.subscribeService.GetChan()
+
 	for {
 		select {
 		case <-ctx.Done():
 			bot.subscribeService.Close()
 
 		case ticker := <-tickers:
+			bot.isWorkingMutex.RLock()
+			isWorking := bot.isWorking
+			bot.isWorkingMutex.RUnlock()
+
 			bot.logger.Info(ticker)
 
 			decision := bot.indicatorService.MakeDecision(ticker)
 
-			switch decision {
-			case indicator.Buy:
-				resp, err := bot.tradingService.SendOrder(tradingdto.Order{
-					OrderType:  "ioc",
-					Symbol:     ticker.ProductId,
-					Side:       "buy",
-					Size:       bot.buySize,
-					LimitPrice: float64(ticker.Candle.Close) * 1.1,
-				})
-				if err != nil {
-					bot.logger.Error(err)
-				} else {
-					if resp == trading.Placed {
-						app := domain.Application{
-							Ticker: ticker.ProductId,
-							Cost:   float64(ticker.Candle.Close),
-							Size:   bot.buySize,
-							Type:   domain.Buy,
-						}
+			if isWorking {
+				switch decision {
+				case indicator.Buy:
+					bot.buyTicker(ticker)
 
-						bot.applicationsRepository.Add(app)
-						bot.telegramBot.SendSubscribedMessage(app.String())
+				case indicator.Sell:
+					bot.sellTicker(ticker)
+				}
+			}
+		}
+	}
+}
 
-						if _, ok := bot.tickers[ticker.ProductId]; !ok {
-							bot.tickers[ticker.ProductId] = bot.buySize
-						} else {
-							bot.tickers[ticker.ProductId] += bot.buySize
-						}
-					} else {
-						bot.logger.Error(
-							fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
-						)
-					}
+func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
+	bot.sizeMutex.RLock()
+	size := bot.buySize
+	bot.sizeMutex.RUnlock()
+
+	resp, err := bot.tradingService.SendOrder(tradingdto.Order{
+		OrderType:  "ioc",
+		Symbol:     ticker.ProductId,
+		Side:       "buy",
+		Size:       size,
+		LimitPrice: float64(ticker.Candle.Close) * 1.1,
+	})
+
+	if err != nil {
+		bot.logger.Error(err)
+	} else {
+		if resp == trading.Placed {
+			app := domain.Application{
+				Ticker: ticker.ProductId,
+				Cost:   float64(ticker.Candle.Close),
+				Size:   size,
+				Type:   domain.Buy,
+			}
+
+			bot.applicationsRepository.Add(app)
+			bot.telegramBot.SendSubscribedMessage(app.String())
+
+			if _, ok := bot.tickers[ticker.ProductId]; !ok {
+				bot.tickers[ticker.ProductId] = size
+			} else {
+				bot.tickers[ticker.ProductId] += size
+			}
+		} else {
+			bot.logger.Error(
+				fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
+			)
+		}
+	}
+}
+
+func (bot *TradingBotImpl) sellTicker(ticker domain.TickerInfo) {
+	if _, ok := bot.tickers[ticker.ProductId]; ok {
+		bot.sizeMutex.RLock()
+		size := bot.buySize
+		bot.sizeMutex.RUnlock()
+
+		var min uint64
+		if size < bot.tickers[ticker.ProductId] {
+			min = size
+		} else {
+			min = bot.tickers[ticker.ProductId]
+		}
+
+		resp, err := bot.tradingService.SendOrder(tradingdto.Order{
+			OrderType:  "ioc",
+			Symbol:     ticker.ProductId,
+			Side:       "sell",
+			Size:       min,
+			LimitPrice: float64(ticker.Candle.Close) * 0.9,
+		})
+		if err != nil {
+			bot.logger.Error(err)
+		} else {
+			if resp == trading.Cancelled {
+				app := domain.Application{
+					Ticker: ticker.ProductId,
+					Cost:   float64(ticker.Candle.Close),
+					Size:   min,
+					Type:   domain.Buy,
 				}
 
-			case indicator.Sell:
-				if _, ok := bot.tickers[ticker.ProductId]; ok {
-					var min uint64
-					if bot.buySize < bot.tickers[ticker.ProductId] {
-						min = bot.buySize
-					} else {
-						min = bot.tickers[ticker.ProductId]
-					}
-
-					resp, err := bot.tradingService.SendOrder(tradingdto.Order{
-						OrderType:  "ioc",
-						Symbol:     ticker.ProductId,
-						Side:       "sell",
-						Size:       min,
-						LimitPrice: float64(ticker.Candle.Close) * 0.9,
-					})
-					if err != nil {
-						bot.logger.Error(err)
-					} else {
-						if resp == trading.Cancelled {
-							app := domain.Application{
-								Ticker: ticker.ProductId,
-								Cost:   float64(ticker.Candle.Close),
-								Size:   min,
-								Type:   domain.Buy,
-							}
-
-							bot.applicationsRepository.Add(app)
-							bot.telegramBot.SendSubscribedMessage(app.String())
-							bot.tickers[ticker.ProductId] -= min
-						} else {
-							bot.logger.Error(
-								fmt.Sprintf("can't sell %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
-							)
-						}
-					}
-				}
+				bot.applicationsRepository.Add(app)
+				bot.telegramBot.SendSubscribedMessage(app.String())
+				bot.tickers[ticker.ProductId] -= min
+			} else {
+				bot.logger.Error(
+					fmt.Sprintf("can't sell %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
+				)
 			}
 		}
 	}
