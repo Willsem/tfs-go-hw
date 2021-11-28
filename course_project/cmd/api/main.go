@@ -76,7 +76,8 @@ func main() {
 
 	tradingService := trading.NewKrakenTradingService(parsedConfig.Kraken)
 
-	indicatorService := indicator.NewTripleCandlesTemplate()
+	// indicatorService := indicator.NewTripleCandlesTemplate()
+	indicatorService := indicator.NewOneCandleTemplate()
 
 	tradingBot := tradingbot.New(subscribeService, tradingService, indicatorService, appRepo, telegramBot, logger)
 	err = tradingBot.Start()
