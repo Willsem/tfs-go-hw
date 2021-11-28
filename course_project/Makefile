@@ -13,6 +13,9 @@ debug:
 test:
 	go test ./...
 
+coverage:
+	go test -cover ./...
+
 migrateup:
 	migrate -path db/migration -database $(POSTRESQL_CONNECTION_STRING) -verbose up
 
