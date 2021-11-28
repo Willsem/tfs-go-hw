@@ -32,6 +32,8 @@ func (handler *TradingBotHandler) Routes() chi.Router {
 	r.Put("/continue", handler.continueWork)
 	r.Put("/pause", handler.pauseWork)
 
+	r.Get("/tickers", handler.tickers)
+
 	r.Route("/ticker/{ticker}", func(r chi.Router) {
 		r.Use(handler.tickerContext)
 
@@ -76,6 +78,11 @@ func (handler *TradingBotHandler) pauseWork(w http.ResponseWriter, r *http.Reque
 	}
 
 	response.Respond(w, http.StatusOK, dto.Message{Message: "Success"})
+}
+
+func (handler *TradingBotHandler) tickers(w http.ResponseWriter, r *http.Request) {
+	tickers := handler.bot.Tickers()
+	response.Respond(w, http.StatusOK, tickers)
 }
 
 func (handler *TradingBotHandler) tickerContext(next http.Handler) http.Handler {

@@ -42,6 +42,14 @@
 * 200 OK
 * 400 Bad Request
 
+### Тикеры с которыми сейчас работает бот
+
+`GET /trading/tickers`
+
+#### Ответы
+
+* 200 OK, **Тело:** `[string]`
+
 ### Добавить тикер для покупок
 
 `POST /trading/ticker/{ticker}/add`

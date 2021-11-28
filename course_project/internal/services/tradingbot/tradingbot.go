@@ -5,6 +5,7 @@ type TradingBot interface {
 	Continue() error
 	Pause() error
 
+	Tickers() []string
 	AddTicker(ticker string) error
 	RemoveTicker(ticker string) error
 
