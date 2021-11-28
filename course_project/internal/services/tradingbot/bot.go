@@ -161,11 +161,11 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 	bot.sizeMutex.RUnlock()
 
 	resp, err := bot.tradingService.SendOrder(tradingdto.Order{
-		OrderType:  "ioc",
+		OrderType:  "mkt",
 		Symbol:     ticker.ProductId,
 		Side:       "buy",
 		Size:       size,
-		LimitPrice: float64(ticker.Candle.Close) * 1.1,
+		LimitPrice: 0,
 	})
 
 	if err != nil {
@@ -209,16 +209,16 @@ func (bot *TradingBotImpl) sellTicker(ticker domain.TickerInfo) {
 		}
 
 		resp, err := bot.tradingService.SendOrder(tradingdto.Order{
-			OrderType:  "ioc",
+			OrderType:  "mkt",
 			Symbol:     ticker.ProductId,
 			Side:       "sell",
 			Size:       min,
-			LimitPrice: float64(ticker.Candle.Close) * 0.9,
+			LimitPrice: 0,
 		})
 		if err != nil {
 			bot.logger.Error(err)
 		} else {
-			if resp == trading.Cancelled {
+			if resp == trading.Placed {
 				app := domain.Application{
 					Ticker: ticker.ProductId,
 					Cost:   float64(ticker.Candle.Close),
