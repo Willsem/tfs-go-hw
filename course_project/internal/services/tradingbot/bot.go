@@ -87,7 +87,7 @@ func (bot *TradingBotImpl) Pause() error {
 	return nil
 }
 
-func (bot *TradingBotImpl) GetTickers() []string {
+func (bot *TradingBotImpl) Tickers() []string {
 	result := make([]string, 0, len(bot.tickers))
 	for key := range bot.tickers {
 		result = append(result, key)
