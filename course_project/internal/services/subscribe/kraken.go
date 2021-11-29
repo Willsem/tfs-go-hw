@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
+	"github.com/willsem/tfs-go-hw/course_project/pkg/log"
 )
 
 const (
@@ -22,6 +23,8 @@ const (
 type KrakenSubscribeService struct {
 	ws     *websocket.Conn
 	config config.Kraken
+
+	logger log.Logger
 
 	writeMutex *sync.Mutex
 	tickers    chan domain.TickerInfo
@@ -47,7 +50,7 @@ func connectWebsocket(config config.Kraken) (*websocket.Conn, error) {
 	return ws, nil
 }
 
-func NewKrakenSubscribeService(config config.Kraken) (*KrakenSubscribeService, error) {
+func NewKrakenSubscribeService(config config.Kraken, logger log.Logger) (*KrakenSubscribeService, error) {
 	ws, err := connectWebsocket(config)
 	if err != nil {
 		return nil, err
@@ -58,6 +61,8 @@ func NewKrakenSubscribeService(config config.Kraken) (*KrakenSubscribeService, e
 	service := &KrakenSubscribeService{
 		ws:     ws,
 		config: config,
+
+		logger: logger,
 
 		writeMutex: &sync.Mutex{},
 		tickers:    make(chan domain.TickerInfo, sizeChan),
@@ -137,7 +142,11 @@ func (service *KrakenSubscribeService) listenSocket(ctx context.Context) {
 		default:
 			err := service.ws.ReadJSON(&resp)
 			if err != nil {
-				service.ws, _ = connectWebsocket(service.config)
+				service.ws, err = connectWebsocket(service.config)
+				if err != nil {
+					service.logger.Error("[SubscribeService]", err)
+				}
+
 				select {
 				case <-service.success:
 				case <-service.alerts:

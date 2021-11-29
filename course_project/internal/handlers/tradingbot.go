@@ -12,6 +12,10 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/pkg/response"
 )
 
+const (
+	tickerContext = "ticker"
+)
+
 type TradingBotHandler struct {
 	bot    tradingbot.TradingBot
 	logger log.Logger
@@ -87,14 +91,14 @@ func (handler *TradingBotHandler) tickers(w http.ResponseWriter, r *http.Request
 
 func (handler *TradingBotHandler) tickerContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ticker := chi.URLParam(r, "ticker")
-		ctx := context.WithValue(r.Context(), "ticker", ticker)
+		ticker := chi.URLParam(r, tickerContext)
+		ctx := context.WithValue(r.Context(), tickerContext, ticker)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Request) {
-	ticker, ok := r.Context().Value("ticker").(string)
+	ticker, ok := r.Context().Value(tickerContext).(string)
 	if !ok {
 		response.Respond(w, http.StatusInternalServerError, dto.Message{Message: "Internal error"})
 		return
@@ -109,7 +113,7 @@ func (handler *TradingBotHandler) addTicker(w http.ResponseWriter, r *http.Reque
 }
 
 func (handler *TradingBotHandler) removeTicker(w http.ResponseWriter, r *http.Request) {
-	ticker, ok := r.Context().Value("ticker").(string)
+	ticker, ok := r.Context().Value(tickerContext).(string)
 	if !ok {
 		response.Respond(w, http.StatusInternalServerError, dto.Message{Message: "Internal error"})
 		return

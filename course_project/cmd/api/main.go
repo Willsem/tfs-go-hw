@@ -69,7 +69,7 @@ func main() {
 
 	telegramBot.Start()
 
-	subscribeService, err := subscribe.NewKrakenSubscribeService(parsedConfig.Kraken)
+	subscribeService, err := subscribe.NewKrakenSubscribeService(parsedConfig.Kraken, logger)
 	if err != nil {
 		logger.Fatal(err)
 	}

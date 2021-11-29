@@ -10,6 +10,10 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
 )
 
+const (
+	loggerServiceName = "[TelegramBot]"
+)
+
 type BotImpl struct {
 	applicationsRepository applications.ApplicationsRepository
 	botAPI                 *tgbotapi.BotAPI
@@ -45,7 +49,7 @@ func (bot *BotImpl) SendSubscribedMessage(message string) {
 
 		_, err := bot.botAPI.Send(msg)
 		if err != nil {
-			bot.logger.Error(err)
+			bot.logger.Error(loggerServiceName, err)
 		}
 	}
 }
@@ -100,7 +104,7 @@ func (bot *BotImpl) listen() {
 			apps, err := bot.applicationsRepository.GetAll()
 			if err != nil {
 				reply = err.Error()
-				bot.logger.Error(err)
+				bot.logger.Error(loggerServiceName, err)
 			} else {
 				reply = ""
 				for _, app := range apps {
@@ -112,7 +116,7 @@ func (bot *BotImpl) listen() {
 			apps, err := bot.applicationsRepository.GetByTicker(parsed[1])
 			if err != nil {
 				reply = err.Error()
-				bot.logger.Error(err)
+				bot.logger.Error(loggerServiceName, err)
 			} else {
 				reply = ""
 				for _, app := range apps {
@@ -135,7 +139,7 @@ func (bot *BotImpl) listen() {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, reply)
 		_, err := bot.botAPI.Send(msg)
 		if err != nil {
-			bot.logger.Error(err)
+			bot.logger.Error(loggerServiceName, err)
 		}
 	}
 }

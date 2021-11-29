@@ -15,6 +15,10 @@ import (
 	"github.com/willsem/tfs-go-hw/course_project/pkg/log"
 )
 
+const (
+	loggerServiceName = "[TradingBot]"
+)
+
 type TradingBotImpl struct {
 	subscribeService       subscribe.SubscribeService
 	tradingService         trading.TradingService
@@ -138,7 +142,7 @@ func (bot *TradingBotImpl) workWithTickers(ctx context.Context) {
 			isWorking := bot.isWorking
 			bot.isWorkingMutex.RUnlock()
 
-			bot.logger.Info(ticker)
+			bot.logger.Info(loggerServiceName, ticker)
 
 			decision := bot.indicatorService.MakeDecision(ticker)
 
@@ -169,7 +173,7 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 	})
 
 	if err != nil {
-		bot.logger.Error(err)
+		bot.logger.Error(loggerServiceName, err)
 	} else {
 		if resp == trading.Placed {
 			app := domain.Application{
@@ -179,7 +183,11 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 				Type:   domain.Buy,
 			}
 
-			bot.applicationsRepository.Add(app)
+			err = bot.applicationsRepository.Add(app)
+			if err != nil {
+				bot.logger.Error(loggerServiceName, err)
+			}
+
 			bot.telegramBot.SendSubscribedMessage(app.String())
 
 			if _, ok := bot.tickers[ticker.ProductId]; !ok {
@@ -188,7 +196,7 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 				bot.tickers[ticker.ProductId] += size
 			}
 		} else {
-			bot.logger.Error(
+			bot.logger.Error(loggerServiceName,
 				fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
 			)
 		}
@@ -216,7 +224,7 @@ func (bot *TradingBotImpl) sellTicker(ticker domain.TickerInfo) {
 			LimitPrice: 0,
 		})
 		if err != nil {
-			bot.logger.Error(err)
+			bot.logger.Error(loggerServiceName, err)
 		} else {
 			if resp == trading.Placed {
 				app := domain.Application{
@@ -226,11 +234,15 @@ func (bot *TradingBotImpl) sellTicker(ticker domain.TickerInfo) {
 					Type:   domain.Buy,
 				}
 
-				bot.applicationsRepository.Add(app)
+				err = bot.applicationsRepository.Add(app)
+				if err != nil {
+					bot.logger.Error(loggerServiceName, err)
+				}
+
 				bot.telegramBot.SendSubscribedMessage(app.String())
 				bot.tickers[ticker.ProductId] -= min
 			} else {
-				bot.logger.Error(
+				bot.logger.Error(loggerServiceName,
 					fmt.Sprintf("can't sell %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
 				)
 			}

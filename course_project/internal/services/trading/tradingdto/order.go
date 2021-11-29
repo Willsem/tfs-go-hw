@@ -2,6 +2,7 @@ package tradingdto
 
 import (
 	"fmt"
+	"net/url"
 )
 
 type Order struct {
@@ -13,14 +14,16 @@ type Order struct {
 }
 
 func (order Order) GetPostData() string {
-	limitPriceData := ""
+	v := url.Values{}
+
 	if order.LimitPrice != 0 {
-		limitPriceData = "&limitPrice=" + fmt.Sprintf("%f", order.LimitPrice)
+		v.Add("limitPrice", fmt.Sprintf("%f", order.LimitPrice))
 	}
 
-	return "orderType=" + order.OrderType + "&" +
-		"symbol=" + order.Symbol + "&" +
-		"side=" + order.Side + "&" +
-		"size=" + fmt.Sprintf("%d", order.Size) +
-		limitPriceData
+	v.Add("orderType", order.OrderType)
+	v.Add("symbol", order.Symbol)
+	v.Add("side", order.Side)
+	v.Add("size", fmt.Sprintf("%d", order.Size))
+
+	return v.Encode()
 }
