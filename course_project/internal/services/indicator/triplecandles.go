@@ -1,6 +1,10 @@
 package indicator
 
-import "github.com/willsem/tfs-go-hw/course_project/internal/domain"
+import (
+	"time"
+
+	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
+)
 
 const (
 	initialSize = 100
@@ -18,13 +22,13 @@ func NewTripleCandlesTemplate() *TripleCandlesTemplate {
 
 func (service *TripleCandlesTemplate) MakeDecision(ticker domain.TickerInfo) Decision {
 	if _, ok := service.candles[ticker.ProductId]; !ok {
-		service.candles[ticker.ProductId] = make([]domain.Candle, initialSize)
+		service.candles[ticker.ProductId] = make([]domain.Candle, 0, initialSize)
 		return Nothing
 	}
 
 	candles := service.candles[ticker.ProductId]
 	n := len(candles)
-	if n > 0 && candles[n-1].Time == ticker.Candle.Time {
+	if n > 0 && time.Time(candles[n-1].Time).Equal(time.Time(ticker.Candle.Time)) {
 		return Nothing
 	}
 
