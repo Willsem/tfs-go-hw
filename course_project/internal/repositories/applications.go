@@ -4,15 +4,14 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
 )
 
 type PostgresqlApplicationsReposity struct {
-	pool *pgxpool.Pool
+	pool IPgxPool
 }
 
-func NewApplicaitionsRepository(pool *pgxpool.Pool) *PostgresqlApplicationsReposity {
+func NewApplicaitionsRepository(pool IPgxPool) *PostgresqlApplicationsReposity {
 	return &PostgresqlApplicationsReposity{
 		pool: pool,
 	}
