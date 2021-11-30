@@ -13,10 +13,6 @@ import (
 )
 
 const (
-	Candle1m candleType = "candles_trade_1m"
-	Candle5m candleType = "candles_trade_5m"
-	Candle1h candleType = "candles_trade_1h"
-
 	sizeChan = 100
 )
 
@@ -94,7 +90,7 @@ func (service *KrakenSubscribeService) GetChan() <-chan domain.TickerInfo {
 	return service.tickers
 }
 
-func (service *KrakenSubscribeService) Subscribe(ticker string, candle candleType) error {
+func (service *KrakenSubscribeService) Subscribe(ticker string, candle domain.CandleType) error {
 	service.writeMutex.Lock()
 	defer service.writeMutex.Unlock()
 
@@ -105,7 +101,7 @@ func (service *KrakenSubscribeService) Subscribe(ticker string, candle candleTyp
 	})
 }
 
-func (service *KrakenSubscribeService) Unsubscribe(ticker string, candle candleType) error {
+func (service *KrakenSubscribeService) Unsubscribe(ticker string, candle domain.CandleType) error {
 	service.writeMutex.Lock()
 	defer service.writeMutex.Unlock()
 
@@ -165,12 +161,12 @@ func (service *KrakenSubscribeService) writeResponse(response event) {
 	case response.Event == "alert":
 		service.alerts <- response.Message
 
-	case response.Feed == string(Candle1m) ||
-		response.Feed == string(Candle5m) ||
-		response.Feed == string(Candle1h) ||
-		response.Feed == string(Candle1m)+"_snapshot" ||
-		response.Feed == string(Candle5m)+"_snapshot" ||
-		response.Feed == string(Candle1h)+"_snapshot":
+	case response.Feed == string(domain.Candle1m) ||
+		response.Feed == string(domain.Candle5m) ||
+		response.Feed == string(domain.Candle1h) ||
+		response.Feed == string(domain.Candle1m)+"_snapshot" ||
+		response.Feed == string(domain.Candle5m)+"_snapshot" ||
+		response.Feed == string(domain.Candle1h)+"_snapshot":
 		tickerInfo := domain.TickerInfo{
 			Feed:      response.Feed,
 			ProductId: response.ProductId,

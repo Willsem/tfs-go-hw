@@ -15,3 +15,10 @@ type ApplicationsRepository interface {
 type IndicatorService interface {
 	MakeDecision(ticker domain.TickerInfo) domain.Decision
 }
+
+type SubscribeService interface {
+	GetChan() <-chan domain.TickerInfo
+	Subscribe(ticker string, candle domain.CandleType) error
+	Unsubscribe(ticker string, candle domain.CandleType) error
+	Close() error
+}

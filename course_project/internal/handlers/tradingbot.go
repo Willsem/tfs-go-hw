@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/willsem/tfs-go-hw/course_project/internal/dto"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/tradingbot"
 	"github.com/willsem/tfs-go-hw/course_project/pkg/log"
 	"github.com/willsem/tfs-go-hw/course_project/pkg/response"
 )
@@ -17,11 +16,11 @@ const (
 )
 
 type TradingBotHandler struct {
-	bot    tradingbot.TradingBot
+	bot    TradingBot
 	logger log.Logger
 }
 
-func NewTradingBotHandler(bot tradingbot.TradingBot, logger log.Logger) *TradingBotHandler {
+func NewTradingBotHandler(bot TradingBot, logger log.Logger) *TradingBotHandler {
 	return &TradingBotHandler{
 		bot:    bot,
 		logger: logger,
