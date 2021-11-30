@@ -143,7 +143,6 @@ func (bot *TradingBot) workWithTickers(ctx context.Context) {
 			decision := bot.indicatorService.MakeDecision(ticker)
 
 			if isWorking {
-				fmt.Println(decision)
 				switch decision {
 				case domain.BuyDecision:
 					bot.buyTicker(ticker)
