@@ -191,9 +191,6 @@ func (bot *TradingBot) buyTicker(ticker domain.TickerInfo) {
 			} else {
 				bot.tickers[ticker.ProductId] += size
 			}
-
-			fmt.Println("TICKERS AFTER BUY:", bot.tickers)
-			fmt.Println("SIZE:", size)
 		} else {
 			bot.logger.Error(loggerServiceName,
 				fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
@@ -214,10 +211,6 @@ func (bot *TradingBot) sellTicker(ticker domain.TickerInfo) {
 		} else {
 			min = bot.tickers[ticker.ProductId]
 		}
-
-		fmt.Println("MAP:", bot.tickers)
-		fmt.Println("TICKER:", ticker.ProductId)
-		fmt.Println("SIZE:", min)
 
 		resp, err := bot.tradingService.SendOrder(dto.Order{
 			OrderType:  "mkt",
