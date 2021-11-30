@@ -22,8 +22,13 @@ type Application struct {
 }
 
 func (app Application) String() string {
-	return fmt.Sprintf("%s $%s\nСтоимость: %f\nРазмер: %d\nВремя заявки: %s\n\n",
-		app.Type, app.Ticker, app.Cost, app.Size, app.CreatedAt.Format("01-02-2006 15:04:05"))
+	if app.CreatedAt.IsZero() {
+		return fmt.Sprintf("%s $%s\nСтоимость: %f\nРазмер: %d\n\n",
+			app.Type, app.Ticker, app.Cost, app.Size)
+	} else {
+		return fmt.Sprintf("%s $%s\nСтоимость: %f\nРазмер: %d\nВремя заявки: %s\n\n",
+			app.Type, app.Ticker, app.Cost, app.Size, app.CreatedAt.Format("01-02-2006 15:04:05"))
+	}
 }
 
 func (t applicationType) String() string {

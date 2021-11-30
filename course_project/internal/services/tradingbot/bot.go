@@ -173,7 +173,7 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 	})
 
 	if err != nil {
-		bot.logger.Error(loggerServiceName, err)
+		bot.logger.Error(loggerServiceName, " error after buy a ticker: ", err)
 	} else {
 		if resp == trading.Placed {
 			app := domain.Application{
@@ -185,7 +185,7 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 
 			err = bot.applicationsRepository.Add(app)
 			if err != nil {
-				bot.logger.Error(loggerServiceName, err)
+				bot.logger.Error(loggerServiceName, " applications repository add: ", err)
 			}
 
 			bot.telegramBot.SendSubscribedMessage(app.String())
@@ -224,19 +224,19 @@ func (bot *TradingBotImpl) sellTicker(ticker domain.TickerInfo) {
 			LimitPrice: 0,
 		})
 		if err != nil {
-			bot.logger.Error(loggerServiceName, err)
+			bot.logger.Error(loggerServiceName, " error after sell a ticker: ", err)
 		} else {
 			if resp == trading.Placed {
 				app := domain.Application{
 					Ticker: ticker.ProductId,
 					Cost:   float64(ticker.Candle.Close),
 					Size:   min,
-					Type:   domain.Buy,
+					Type:   domain.Sell,
 				}
 
 				err = bot.applicationsRepository.Add(app)
 				if err != nil {
-					bot.logger.Error(loggerServiceName, err)
+					bot.logger.Error(loggerServiceName, " applications repository add: ", err)
 				}
 
 				bot.telegramBot.SendSubscribedMessage(app.String())
