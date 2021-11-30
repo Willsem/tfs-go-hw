@@ -7,7 +7,6 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
-	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
 )
 
 const (
@@ -15,14 +14,14 @@ const (
 )
 
 type BotImpl struct {
-	applicationsRepository applications.ApplicationsRepository
+	applicationsRepository ApplicationsRepository
 	botAPI                 *tgbotapi.BotAPI
 	subscribed             []int64
 	logger                 log.Logger
 }
 
 func NewBot(
-	repo applications.ApplicationsRepository,
+	repo ApplicationsRepository,
 	logger log.Logger,
 	config config.Telegram,
 ) (*BotImpl, error) {

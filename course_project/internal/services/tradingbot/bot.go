@@ -6,10 +6,8 @@ import (
 	"sync"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
-	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/indicator"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/subscribe"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading/tradingdto"
 	"github.com/willsem/tfs-go-hw/course_project/pkg/log"
@@ -23,8 +21,8 @@ type TradingBotImpl struct {
 	subscribeService       subscribe.SubscribeService
 	tradingService         trading.TradingService
 	indicatorService       indicator.IndicatorService
-	applicationsRepository applications.ApplicationsRepository
-	telegramBot            telegram.Bot
+	applicationsRepository ApplicationsRepository
+	telegramBot            TelegramBot
 	logger                 log.Logger
 	tickers                map[string]uint64
 	buySize                uint64
@@ -38,8 +36,8 @@ func New(
 	subscribeService subscribe.SubscribeService,
 	tradingService trading.TradingService,
 	indicatorService indicator.IndicatorService,
-	applicationsRepository applications.ApplicationsRepository,
-	telegramBot telegram.Bot,
+	applicationsRepository ApplicationsRepository,
+	telegramBot TelegramBot,
 	logger log.Logger,
 ) *TradingBotImpl {
 	return &TradingBotImpl{

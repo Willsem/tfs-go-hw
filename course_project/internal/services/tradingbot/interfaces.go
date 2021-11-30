@@ -1,6 +1,10 @@
-package applications
+package tradingbot
 
 import "github.com/willsem/tfs-go-hw/course_project/internal/domain"
+
+type TelegramBot interface {
+	SendSubscribedMessage(message string)
+}
 
 type ApplicationsRepository interface {
 	Add(application domain.Application) error
