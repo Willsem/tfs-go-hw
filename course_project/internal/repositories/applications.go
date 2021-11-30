@@ -1,4 +1,4 @@
-package applications
+package repositories
 
 import (
 	"context"
@@ -12,7 +12,7 @@ type PostgresqlApplicationsReposity struct {
 	pool *pgxpool.Pool
 }
 
-func New(pool *pgxpool.Pool) *PostgresqlApplicationsReposity {
+func NewApplicaitionsRepository(pool *pgxpool.Pool) *PostgresqlApplicationsReposity {
 	return &PostgresqlApplicationsReposity{
 		pool: pool,
 	}

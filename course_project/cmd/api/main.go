@@ -11,7 +11,7 @@ import (
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
 	"github.com/willsem/tfs-go-hw/course_project/internal/handlers"
-	"github.com/willsem/tfs-go-hw/course_project/internal/repositories/applications"
+	"github.com/willsem/tfs-go-hw/course_project/internal/repositories"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/indicator"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/subscribe"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/telegram"
@@ -60,7 +60,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	appRepo := applications.New(pgsqlPool)
+	appRepo := repositories.NewApplicaitionsRepository(pgsqlPool)
 
 	telegramBot, err := telegram.NewBot(appRepo, logger, parsedConfig.Telegram)
 	if err != nil {
