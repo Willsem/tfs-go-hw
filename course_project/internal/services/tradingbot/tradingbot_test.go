@@ -61,7 +61,7 @@ func TestBotNothingDecision(t *testing.T) {
 	time.Sleep(1 * time.Second)
 }
 
-/*func TestBotBuyAndSellDecision(t *testing.T) {
+func TestBotBuyAndSellDecision(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -159,7 +159,7 @@ func TestBotNothingDecision(t *testing.T) {
 	assert.Nil(t, err)
 
 	time.Sleep(1 * time.Second)
-}*/
+}
 
 func TestBotSellDecision(t *testing.T) {
 	t.Parallel()
