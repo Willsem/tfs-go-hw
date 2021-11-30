@@ -131,6 +131,7 @@ func (bot *TradingBot) workWithTickers(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			bot.subscribeService.Close()
+			return
 
 		case ticker := <-tickers:
 			bot.isWorkingMutex.RLock()

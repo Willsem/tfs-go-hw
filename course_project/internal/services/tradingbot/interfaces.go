@@ -11,8 +11,6 @@ type TelegramBot interface {
 
 type ApplicationsRepository interface {
 	Add(application domain.Application) error
-	GetAll() ([]domain.Application, error)
-	GetByTicker(ticker string) ([]domain.Application, error)
 }
 
 type IndicatorService interface {
