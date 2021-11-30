@@ -56,12 +56,12 @@ var testingCases = []domain.TickerInfo{
 	},
 }
 
-var expectedCases = []Decision{
-	Nothing,
-	Nothing,
-	Buy,
-	Sell,
-	Nothing,
+var expectedCases = []domain.Decision{
+	domain.NothingDecision,
+	domain.NothingDecision,
+	domain.BuyDecision,
+	domain.SellDecision,
+	domain.NothingDecision,
 }
 
 func TestOneCandleTemplateOk(t *testing.T) {

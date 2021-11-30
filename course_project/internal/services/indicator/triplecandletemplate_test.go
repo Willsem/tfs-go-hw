@@ -74,15 +74,15 @@ var testingCasesTriple = []domain.TickerInfo{
 	},
 }
 
-var expectedCasesTriple = []Decision{
-	Nothing,
-	Nothing,
-	Nothing,
-	Sell,
-	Nothing,
-	Nothing,
-	Buy,
-	Nothing,
+var expectedCasesTriple = []domain.Decision{
+	domain.NothingDecision,
+	domain.NothingDecision,
+	domain.NothingDecision,
+	domain.SellDecision,
+	domain.NothingDecision,
+	domain.NothingDecision,
+	domain.BuyDecision,
+	domain.NothingDecision,
 }
 
 func TestTripleCandleTemplateOk(t *testing.T) {
