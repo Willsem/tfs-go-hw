@@ -6,8 +6,7 @@ import (
 	"sync"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading/tradingdto"
+	"github.com/willsem/tfs-go-hw/course_project/internal/dto"
 	"github.com/willsem/tfs-go-hw/course_project/pkg/log"
 )
 
@@ -17,7 +16,7 @@ const (
 
 type TradingBot struct {
 	subscribeService       SubscribeService
-	tradingService         trading.TradingService
+	tradingService         TradingService
 	indicatorService       IndicatorService
 	applicationsRepository ApplicationsRepository
 	telegramBot            TelegramBot
@@ -32,7 +31,7 @@ type TradingBot struct {
 
 func New(
 	subscribeService SubscribeService,
-	tradingService trading.TradingService,
+	tradingService TradingService,
 	indicatorService IndicatorService,
 	applicationsRepository ApplicationsRepository,
 	telegramBot TelegramBot,
@@ -160,7 +159,7 @@ func (bot *TradingBot) buyTicker(ticker domain.TickerInfo) {
 	size := bot.buySize
 	bot.sizeMutex.RUnlock()
 
-	resp, err := bot.tradingService.SendOrder(tradingdto.Order{
+	resp, err := bot.tradingService.SendOrder(dto.Order{
 		OrderType:  "mkt",
 		Symbol:     ticker.ProductId,
 		Side:       "buy",
@@ -171,7 +170,7 @@ func (bot *TradingBot) buyTicker(ticker domain.TickerInfo) {
 	if err != nil {
 		bot.logger.Error(loggerServiceName, " error after buy a ticker: ", err)
 	} else {
-		if resp == trading.Placed {
+		if resp == domain.Placed {
 			app := domain.Application{
 				Ticker: ticker.ProductId,
 				Cost:   float64(ticker.Candle.Close),
@@ -212,7 +211,7 @@ func (bot *TradingBot) sellTicker(ticker domain.TickerInfo) {
 			min = bot.tickers[ticker.ProductId]
 		}
 
-		resp, err := bot.tradingService.SendOrder(tradingdto.Order{
+		resp, err := bot.tradingService.SendOrder(dto.Order{
 			OrderType:  "mkt",
 			Symbol:     ticker.ProductId,
 			Side:       "sell",
@@ -222,7 +221,7 @@ func (bot *TradingBot) sellTicker(ticker domain.TickerInfo) {
 		if err != nil {
 			bot.logger.Error(loggerServiceName, " error after sell a ticker: ", err)
 		} else {
-			if resp == trading.Placed {
+			if resp == domain.Placed {
 				app := domain.Application{
 					Ticker: ticker.ProductId,
 					Cost:   float64(ticker.Candle.Close),

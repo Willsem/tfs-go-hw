@@ -1,6 +1,4 @@
-package trading
-
-import "github.com/willsem/tfs-go-hw/course_project/internal/services/trading/tradingdto"
+package domain
 
 type OrderStatus string
 
@@ -26,8 +24,3 @@ const (
 	WouldCauseLiquidation      = "wouldCauseLiquidation"
 	WouldNotReducePosition     = "wouldNotReducePosition"
 )
-
-type TradingService interface {
-	OpenPositions() ([]tradingdto.Position, error)
-	SendOrder(order tradingdto.Order) (OrderStatus, error)
-}

@@ -1,4 +1,4 @@
-package tradingdto
+package dto
 
 import (
 	"fmt"

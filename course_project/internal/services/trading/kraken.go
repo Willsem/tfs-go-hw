@@ -12,7 +12,8 @@ import (
 	"time"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/config"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading/tradingdto"
+	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
+	"github.com/willsem/tfs-go-hw/course_project/internal/dto"
 )
 
 const apiv3 = "/api/v3"
@@ -40,7 +41,7 @@ const (
 	methodOpenPositions   = http.MethodGet
 )
 
-func (service *KrakenTradingService) OpenPositions() ([]tradingdto.Position, error) {
+func (service *KrakenTradingService) OpenPositions() ([]dto.Position, error) {
 	res, err := service.sendRequest(methodOpenPositions, endpointOpenPositions, "")
 	if err != nil {
 		return nil, err
@@ -51,7 +52,7 @@ func (service *KrakenTradingService) OpenPositions() ([]tradingdto.Position, err
 		return nil, UnknownResponseError
 	}
 
-	var positions []tradingdto.Position
+	var positions []dto.Position
 	j, err := json.Marshal(resp)
 	if err != nil {
 		return nil, err
@@ -70,34 +71,34 @@ const (
 	methodSendOrder   = http.MethodPost
 )
 
-func (service *KrakenTradingService) SendOrder(order tradingdto.Order) (OrderStatus, error) {
+func (service *KrakenTradingService) SendOrder(order dto.Order) (domain.OrderStatus, error) {
 	postData := order.GetPostData()
 	res, err := service.sendRequest(methodSendOrder, endpointSendOrder, postData)
 	if err != nil {
-		return Empty, err
+		return domain.Empty, err
 	}
 
 	resp, ok := res["sendStatus"]
 	if !ok {
-		return Empty, UnknownResponseError
+		return domain.Empty, UnknownResponseError
 	}
 
 	respMap, ok := resp.(map[string]interface{})
 	if !ok {
-		return Empty, UnknownResponseError
+		return domain.Empty, UnknownResponseError
 	}
 
 	status, ok := respMap["status"]
 	if !ok {
-		return Empty, UnknownResponseError
+		return domain.Empty, UnknownResponseError
 	}
 
 	statusString, ok := status.(string)
 	if !ok {
-		return Empty, UnknownResponseError
+		return domain.Empty, UnknownResponseError
 	}
 
-	return OrderStatus(statusString), nil
+	return domain.OrderStatus(statusString), nil
 }
 
 func (service *KrakenTradingService) generateAuthent(endpoint string, postData string) (string, error) {
