@@ -152,7 +152,7 @@ func TestBotBuyAndSellDecision(t *testing.T) {
 	err := bot.Start()
 	bot.AddTicker("APPL")
 	channel <- tickerInfoBuy
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Microsecond)
 	channel <- tickerInfoSell
 	bot.RemoveTicker("APPL")
 	bot.Stop()
