@@ -11,3 +11,7 @@ type ApplicationsRepository interface {
 	GetAll() ([]domain.Application, error)
 	GetByTicker(ticker string) ([]domain.Application, error)
 }
+
+type IndicatorService interface {
+	MakeDecision(ticker domain.TickerInfo) domain.Decision
+}

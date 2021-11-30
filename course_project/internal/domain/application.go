@@ -8,8 +8,8 @@ import (
 type applicationType string
 
 const (
-	Buy  applicationType = "buy"
-	Sell applicationType = "sell"
+	BuyAppType  applicationType = "buy"
+	SellAppType applicationType = "sell"
 )
 
 type Application struct {
@@ -33,9 +33,9 @@ func (app Application) String() string {
 
 func (t applicationType) String() string {
 	switch t {
-	case Buy:
+	case BuyAppType:
 		return "Покупка"
-	case Sell:
+	case SellAppType:
 		return "Продажа"
 	default:
 		return "Неизвестный тип заявки"

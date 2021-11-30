@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/willsem/tfs-go-hw/course_project/internal/domain"
-	"github.com/willsem/tfs-go-hw/course_project/internal/services/indicator"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/subscribe"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading"
 	"github.com/willsem/tfs-go-hw/course_project/internal/services/trading/tradingdto"
@@ -20,7 +19,7 @@ const (
 type TradingBotImpl struct {
 	subscribeService       subscribe.SubscribeService
 	tradingService         trading.TradingService
-	indicatorService       indicator.IndicatorService
+	indicatorService       IndicatorService
 	applicationsRepository ApplicationsRepository
 	telegramBot            TelegramBot
 	logger                 log.Logger
@@ -35,7 +34,7 @@ type TradingBotImpl struct {
 func New(
 	subscribeService subscribe.SubscribeService,
 	tradingService trading.TradingService,
-	indicatorService indicator.IndicatorService,
+	indicatorService IndicatorService,
 	applicationsRepository ApplicationsRepository,
 	telegramBot TelegramBot,
 	logger log.Logger,
@@ -146,10 +145,10 @@ func (bot *TradingBotImpl) workWithTickers(ctx context.Context) {
 
 			if isWorking {
 				switch decision {
-				case indicator.Buy:
+				case domain.BuyDecision:
 					bot.buyTicker(ticker)
 
-				case indicator.Sell:
+				case domain.SellDecision:
 					bot.sellTicker(ticker)
 				}
 			}
@@ -178,7 +177,7 @@ func (bot *TradingBotImpl) buyTicker(ticker domain.TickerInfo) {
 				Ticker: ticker.ProductId,
 				Cost:   float64(ticker.Candle.Close),
 				Size:   size,
-				Type:   domain.Buy,
+				Type:   domain.BuyAppType,
 			}
 
 			err = bot.applicationsRepository.Add(app)
@@ -229,7 +228,7 @@ func (bot *TradingBotImpl) sellTicker(ticker domain.TickerInfo) {
 					Ticker: ticker.ProductId,
 					Cost:   float64(ticker.Candle.Close),
 					Size:   min,
-					Type:   domain.Sell,
+					Type:   domain.SellAppType,
 				}
 
 				err = bot.applicationsRepository.Add(app)

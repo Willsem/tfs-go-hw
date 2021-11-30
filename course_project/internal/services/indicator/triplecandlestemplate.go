@@ -20,28 +20,28 @@ func NewTripleCandlesTemplate() *TripleCandlesTemplate {
 	}
 }
 
-func (service *TripleCandlesTemplate) MakeDecision(ticker domain.TickerInfo) Decision {
+func (service *TripleCandlesTemplate) MakeDecision(ticker domain.TickerInfo) domain.Decision {
 	if _, ok := service.candles[ticker.ProductId]; !ok {
 		service.candles[ticker.ProductId] = make([]domain.Candle, 0, initialSize)
-		return Nothing
+		return domain.NothingDecision
 	}
 
 	candles := service.candles[ticker.ProductId]
 	n := len(candles)
 	if n > 0 && time.Time(candles[n-1].Time).Equal(time.Time(ticker.Candle.Time)) {
-		return Nothing
+		return domain.NothingDecision
 	}
 
 	service.candles[ticker.ProductId] = append(candles, ticker.Candle)
 
 	if len(service.candles[ticker.ProductId]) < 3 {
-		return Nothing
+		return domain.NothingDecision
 	}
 
 	return service.findTemplates(service.candles[ticker.ProductId])
 }
 
-func (service *TripleCandlesTemplate) findTemplates(candles []domain.Candle) Decision {
+func (service *TripleCandlesTemplate) findTemplates(candles []domain.Candle) domain.Decision {
 	red := 0
 	green := 0
 	for _, candle := range candles[len(candles)-3:] {
@@ -53,12 +53,12 @@ func (service *TripleCandlesTemplate) findTemplates(candles []domain.Candle) Dec
 	}
 
 	if red == 3 {
-		return Buy
+		return domain.BuyDecision
 	}
 
 	if green == 3 {
-		return Sell
+		return domain.SellDecision
 	}
 
-	return Nothing
+	return domain.NothingDecision
 }
