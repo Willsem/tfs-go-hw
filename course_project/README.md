@@ -4,7 +4,7 @@
 
 ## Архитектура приложения
 
-![modules](./img/modules.png)
+![modules](./docs/modules.png)
 
 ## REST API
 
