@@ -26,6 +26,7 @@ type TradingBot struct {
 	isWorking              bool
 	cancelCtx              func()
 	sizeMutex              *sync.RWMutex
+	tickersMutex           *sync.RWMutex
 	isWorkingMutex         *sync.RWMutex
 }
 
@@ -48,6 +49,7 @@ func New(
 		buySize:                1,
 		isWorking:              false,
 		sizeMutex:              &sync.RWMutex{},
+		tickersMutex:           &sync.RWMutex{},
 		isWorkingMutex:         &sync.RWMutex{},
 	}
 }
@@ -87,10 +89,13 @@ func (bot *TradingBot) Pause() error {
 }
 
 func (bot *TradingBot) Tickers() []string {
+	bot.tickersMutex.RLock()
 	result := make([]string, 0, len(bot.tickers))
 	for key := range bot.tickers {
 		result = append(result, key)
 	}
+	bot.tickersMutex.RUnlock()
+
 	return result
 }
 
@@ -100,7 +105,9 @@ func (bot *TradingBot) AddTicker(ticker string) error {
 		return err
 	}
 
+	bot.tickersMutex.Lock()
 	bot.tickers[ticker] = 0
+	bot.tickersMutex.Unlock()
 
 	return nil
 }
@@ -111,9 +118,11 @@ func (bot *TradingBot) RemoveTicker(ticker string) error {
 		return err
 	}
 
+	bot.tickersMutex.Lock()
 	if _, ok := bot.tickers[ticker]; ok {
 		delete(bot.tickers, ticker)
 	}
+	bot.tickersMutex.Unlock()
 
 	return nil
 }
@@ -186,11 +195,13 @@ func (bot *TradingBot) buyTicker(ticker domain.TickerInfo) {
 
 			bot.telegramBot.SendSubscribedMessage(app.String())
 
+			bot.tickersMutex.Lock()
 			if _, ok := bot.tickers[ticker.ProductId]; !ok {
 				bot.tickers[ticker.ProductId] = size
 			} else {
 				bot.tickers[ticker.ProductId] += size
 			}
+			bot.tickersMutex.Unlock()
 		} else {
 			bot.logger.Error(loggerServiceName,
 				fmt.Sprintf("can't buy %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
@@ -205,12 +216,14 @@ func (bot *TradingBot) sellTicker(ticker domain.TickerInfo) {
 		size := bot.buySize
 		bot.sizeMutex.RUnlock()
 
+		bot.tickersMutex.RLock()
 		var min uint64
 		if size < bot.tickers[ticker.ProductId] {
 			min = size
 		} else {
 			min = bot.tickers[ticker.ProductId]
 		}
+		bot.tickersMutex.RUnlock()
 
 		resp, err := bot.tradingService.SendOrder(dto.Order{
 			OrderType:  "mkt",
@@ -236,7 +249,10 @@ func (bot *TradingBot) sellTicker(ticker domain.TickerInfo) {
 				}
 
 				bot.telegramBot.SendSubscribedMessage(app.String())
+
+				bot.tickersMutex.Lock()
 				bot.tickers[ticker.ProductId] -= min
+				bot.tickersMutex.Unlock()
 			} else {
 				bot.logger.Error(loggerServiceName,
 					fmt.Sprintf("can't sell %s by %f: %s", ticker.ProductId, ticker.Candle.Close, string(resp)),
