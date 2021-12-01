@@ -1,0 +1,16 @@
+[telegram]
+bot_key = "2051853028:AAFTnnMJ6bzVzXTOlKF7wbS2t5x6DgePkFo"
+
+[kraken]
+api_key = "s2Ty4DtAJX4hiwcjKDQfdthfqu4FJhdMv9xHoZh8f6XhMa2unBpfjuQe"
+api_secret = "zUtoRRv0wEiuDdvPIdaAIMyCb9YgvR/t/ubMnBf5pMj7QimwaUExVTkKDmQr42p61STfOGNLXMHjtpsPhT9bsWqW"
+rest_url = "https://demo-futures.kraken.com/derivatives"
+socket_url = "wss://demo-futures.kraken.com/ws/v1"
+
+[database]
+connection_string = "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable"
+
+[server]
+listen_addr = ":8080"
+cert_file = "fullchain.pem"
+key_file = "privkey.pem"

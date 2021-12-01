@@ -1,0 +1,108 @@
+name: 'Course project'
+
+on: [push]
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        go: [ 1.17, 1.16 ]
+
+    name: Tests Go ${{ matrix.go }}
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: 'Install Go'
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: 'Checkout code'
+        uses: actions/checkout@v2
+
+      - name: 'Run tests'
+        run: cd course_project && make test
+
+  build:
+    runs-on: ubuntu-latest
+    name: 'Build'
+    steps:
+      - name: 'Install Go'
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - name: 'Check Out Repo'
+        uses: actions/checkout@v2
+
+      - name: 'Build the server'
+        run: cd course_project && make
+
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: server-bin
+          path: ./course_project/api
+          retention-days: 1
+
+  publish:
+    runs-on: ubuntu-latest
+    name: 'Publish'
+    needs: [build, test]
+    steps:
+      - name: 'Check Out Repo'
+        uses: actions/checkout@v2
+
+      - name: 'Download binary'
+        uses: actions/download-artifact@v2
+        with:
+          name: server-bin
+          path: ./course_project/api
+
+      - name: 'Login to Docker Hub'
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: 'Build and push'
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./course_project/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/tfs-trading-bot:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    name: 'Deploy'
+    needs: [publish]
+    steps:
+      - name: 'Check Out Repo'
+        uses: actions/checkout@v2
+
+      - name: 'Configure SSH'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging.key
+          sudo chmod 600 ~/.ssh/staging.key
+          cat >>~/.ssh/config <<END
+          Host staging
+            HostName $REMOTE_HOST
+            User $REMOTE_USER
+            IdentityFile ~/.ssh/staging.key
+            StrictHostKeyChecking no
+          END
+      - name: 'Stop the server'
+        run: ssh staging 'cd trading-bot && docker-compose down'
+
+      - name: 'Pull images'
+        run: |
+          ssh staging 'cd trading-bot && docker-compose pull'
+      - name: 'Run the server'
+        run: ssh staging 'cd trading-bot && docker-compose up -d'

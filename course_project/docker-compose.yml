@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  server:
+    container_name: trading-server
+    image: willsem/tfs-trading-bot:latest
+    volumes:
+      - ./configs:/configs
+      - ./logs:/app/logs
+      - ./https:/https
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt
+    ports:
+      - '80:8080'
+    restart: always
+    networks:
+      - trading-net
+
+  postgres:
+    container_name: trading-database
+    image: library/postgres:13
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: trading
+      POSTGRES_PASSWORD: 123456
+    ports:
+      - '5432:5432'
+    restart: always
+    networks:
+      - trading-net
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./migration:/migration
+    command: ["-path", "/migration", "-database",  "postgres://postgres:123456@localhost:5432/trading_db?sslmode=disable", "-verbose", "up" ]
+    links:
+      - postgres
+    networks:
+      - trading-net
+
+networks:
+  trading-net:
